@@ -1,6 +1,8 @@
 
 (XML) materials, lights, cameras ('skin') file: .xml
 ---------------------------------------------------
+Revision history:
+  2004-06-03, Fredrik Dyrkell:  Added color and intensity to lightsource tag  
 
 <scenedata>
 	<camera id="" type="perspective/ortho/...">
@@ -10,11 +12,22 @@
 		<fov horiz="1.0" vert="1.0" />
 	</camera>
 
+  * Might as well use omni serving as both a point light
+  and a spherical area light?
+  That is, a point light is an omni with no radius!
+  
+  * Also we assume only diffuse emitters?
+
+  * TODO: Add properties for spotlight, such as angles and distances!
+      
+
 	<lightsource id="" type="omni/spot/spherical/directional/area/...">
 		<position x="1.0" y="1.0" z="1.0" />
 		<direction x="1.0" y="1.0" z="1.0" />
 		<radius value="1.0" />
 		<samples u="1" v="1" />
+    <color r="1.0" g="1.0" b="1.0" />
+    <intensity value="1.0" />
 	</lightsource>
 	
 	<material id="" type="lambert/reflect/phong/blinn/...">
