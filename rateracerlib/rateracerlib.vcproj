@@ -166,6 +166,9 @@
 				RelativePath=".\shapes\Triangle.h">
 			</File>
 			<File
+				RelativePath=".\shapes\TriangleGroup.h">
+			</File>
+			<File
 				RelativePath=".\shapes\TriMesh.h">
 			</File>
 		</Filter>

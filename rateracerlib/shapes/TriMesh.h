@@ -4,6 +4,7 @@
 #include <map>
 
 #include "Shape.h"
+#include "TriangleGroup.h"
 #include "Triangle.h"
 
 #include "DebugDraw.h"
@@ -19,6 +20,7 @@ typedef std::map< std::string, Material* > MaterialMap;
 class TriMesh : public Shape
 {
 public:
+  // (FIXME make materialMap static member of Model?)
 	TriMesh(ChunkMesh *pMesh, const char* name, MaterialMap& materialMap)
 	{
 		lastHit = NULL;
@@ -29,10 +31,11 @@ public:
 		printf("numVertices: %d\n", pMesh->numVertices);
 		printf("numNormals: %d\n", pMesh->numNormals);
 		printf("numUVs: %d\n", pMesh->numUVs);
-
-		int n, g, f;
+		printf("numMeshGroups: %d\n", pMesh->numMeshGroups);
 
     // FIXME: Reuse (point into) existing arrays in model!
+
+		int n;
 
 		mVertices.resize(pMesh->numVertices);
 		for (n = 0; n < pMesh->numVertices; n++) {
@@ -57,12 +60,9 @@ public:
 		int vi[3], ni[3], uvi[3];
 		Triangle *tri;
 
-		printf("numMeshGroups: %d\n", pMesh->numMeshGroups);
-    for (g = 0; g < pMesh->numMeshGroups; g++)
+    for (int g = 0; g < pMesh->numMeshGroups; g++)
 		{
 			MeshGroup *pGroup = pMesh->meshGroups[g];
-			printf("  Mesh group: material = '%s' numTriangles = %d\n",
-				pGroup->materialName, pGroup->numTriangles);
 
       Material *mat = materialMap[pGroup->materialName];
       if (mat == NULL)
@@ -70,82 +70,93 @@ public:
         mat = new Material();
         materialMap[pGroup->materialName] = mat;
       }
-      /* MaterialMap::iterator it = materialMap.find(pGroup->materialName);
-      if (it != materialMap.end()) {
-        mat = it->second;
-      }
-      else {
-        mat = new Material();
-        materialMap[pGroup->materialName] = mat;
-      }*/
 
-      // FIXME: Allocate all triangles here!
+      TriangleGroup *triGroup = new TriangleGroup(pGroup, mat);
 
-			for (f = 0; f < pGroup->numTriangles; f++)
-			{
-				vi[0] = pGroup->vertexIndices[3*f+0];
-				vi[1] = pGroup->vertexIndices[3*f+1];
-				vi[2] = pGroup->vertexIndices[3*f+2];
+		  printf("  Mesh group: material = '%s' numTriangles = %d\n",
+		    pGroup->materialName, pGroup->numTriangles);
 
-				ni[0] = pGroup->normalIndices[3*f+0];
-				ni[1] = pGroup->normalIndices[3*f+1];
-				ni[2] = pGroup->normalIndices[3*f+2];
+      triGroup->material = mat;
 
-				uvi[0] = pGroup->uvIndices[3*f+0];
-				uvi[1] = pGroup->uvIndices[3*f+1];
-				uvi[2] = pGroup->uvIndices[3*f+2];
+  		triGroup->mTriangles.resize(pGroup->numTriangles);
+		  for (int f = 0; f < pGroup->numTriangles; f++)
+		  {
+			  vi[0] = pGroup->vertexIndices[3*f+0];
+			  vi[1] = pGroup->vertexIndices[3*f+1];
+			  vi[2] = pGroup->vertexIndices[3*f+2];
 
-				tri = new Triangle(&mVertices[vi[0]], &mVertices[vi[1]], &mVertices[vi[2]]);
-				tri->N0 = &mNormals[ni[0]]; tri->N1 = &mNormals[ni[1]]; tri->N2 = &mNormals[ni[2]];
+			  ni[0] = pGroup->normalIndices[3*f+0];
+			  ni[1] = pGroup->normalIndices[3*f+1];
+			  ni[2] = pGroup->normalIndices[3*f+2];
 
-				if (pMesh->numUVs == 0) {
-					tri->uv0 = tri->uv1 = tri->uv2 = &gDefaultUV;
-				} else {
-					tri->uv0 = &mUVs[uvi[0]]; tri->uv1 = &mUVs[uvi[1]]; tri->uv2 = &mUVs[uvi[2]];
-				}
+			  uvi[0] = pGroup->uvIndices[3*f+0];
+			  uvi[1] = pGroup->uvIndices[3*f+1];
+			  uvi[2] = pGroup->uvIndices[3*f+2];
 
-				tri->material = mat;
+			  tri = new Triangle();
 
-				mTris.push_back(tri);
-			}
+        tri->setVertices(&mVertices[vi[0]], &mVertices[vi[1]], &mVertices[vi[2]]);
+			  tri->setNormals(&mNormals[ni[0]], &mNormals[ni[1]], &mNormals[ni[2]]);
+			  if (pMesh->numUVs == 0) {
+				  tri->setUVs(&gDefaultUV, &gDefaultUV, &gDefaultUV);
+			  } else {
+				  tri->setUVs(&mUVs[uvi[0]], &mUVs[uvi[1]], &mUVs[uvi[2]]);
+			  }
+
+			  tri->material = mat;
+
+			  //triGroup->mTriangles.push_back(tri);
+        triGroup->mTriangles[f] = tri;
+		  }
+      mTriangleGroups.push_back(triGroup);
 		}
 	}
 
 	virtual ~TriMesh()
 	{
-		for (int n = 0; n < (int)mTris.size(); n++) {
-			delete mTris[n];
-		}
-	}
+		for (int g = 0; g < (int)mTriangleGroups.size(); g++)
+    {
+      TriangleGroup *triGroup = mTriangleGroups[g];
+
+		  for (int n = 0; n < (int)triGroup->mTriangles.size(); n++) {
+			  delete triGroup->mTriangles[n];
+		  }
+      delete triGroup;
+    }
+  }
 
   std::string mMeshName;
 	std::vector<Vec3> mVertices;
 	std::vector<Vec3> mNormals;
 	std::vector<Vec2> mUVs;
 
-	std::vector<Triangle*> mTris;
+ 	std::vector<TriangleGroup*> mTriangleGroups;
 
-	Triangle *lastHit;
+	TriangleGroup *lastHit;
 
 	int getNumTris()
 	{
-		return (int)mTris.size();
+    int numTris = 0;
+		for (int g = 0; g < (int)mTriangleGroups.size(); g++) {
+		  numTris += (int)mTriangleGroups[g]->mTriangles.size();
+    }
+    return numTris;
 	}
 
 	void calcBounds(Vec3& min, Vec3&max)
 	{
 		Vec3 tmpMin, tmpMax;
 
-		if (mTris.size() == 0) {
+		if (mTriangleGroups.size() == 0) {
 			min.assign( FLT_MAX, FLT_MAX, FLT_MAX);
 			max.assign(-FLT_MAX,-FLT_MAX,-FLT_MAX);
 			return;
 		}
 
-		mTris[0]->calcBounds(min, max);
-		for (int i = 1; i < (int)mTris.size(); i++)
+		mTriangleGroups[0]->calcBounds(min, max);
+		for (int i = 1; i < (int)mTriangleGroups.size(); i++)
 		{
-			mTris[i]->calcBounds(tmpMin, tmpMax);
+			mTriangleGroups[i]->calcBounds(tmpMin, tmpMax);
 
 			if (tmpMin[0] < min[0]) min[0] = tmpMin[0];
 			if (tmpMin[1] < min[1]) min[1] = tmpMin[1];
@@ -160,13 +171,13 @@ public:
 	float collideRay(const Ray& r)
 	{
 		float t, tHit = FLT_MAX;
-		Triangle *tri;
-		for (int i = 0; i < (int)mTris.size(); i++) {
-			tri = mTris[i];
-			t = tri->collideRay(r);
+		TriangleGroup *triGroup;
+		for (int i = 0; i < (int)mTriangleGroups.size(); i++) {
+			triGroup = mTriangleGroups[i];
+			t = triGroup->collideRay(r);
 			if (t > cEpsilon && t < tHit) {
 				tHit = t;
-				lastHit = tri;
+				lastHit = triGroup;
 			}
 		}
 		return tHit;
@@ -192,15 +203,19 @@ public:
 		return lastHit->getTangent(p);
 	}
 
-	void rasterize(Grid *grid)
+  /*void rasterize(Grid *grid)
 	{
-		for (int n = 0; n < (int)mTris.size(); n++) {
-			mTris[n]->rasterize(grid);
+		for (int n = 0; n < (int)mTriangles.size(); n++) {
+			mTriangles[n]->rasterize(grid);
 		}
-	}
+	}*/
 
 	void drawBoundingBoxes()
 	{
+		for (int n = 0; n < (int)mTriangleGroups.size(); n++) {
+			mTriangleGroups[n]->drawBoundingBoxes();
+		}
+
 		material->setPreviewMaterial();
 		Vec3 min, max;
 		calcBounds(min, max);
@@ -209,10 +224,9 @@ public:
 
 	void drawPreview()
 	{
-		//material->setPreviewMaterial();
-		for (int n = 0; n < (int)mTris.size(); n++) {
-      mTris[n]->material->setPreviewMaterial();
-			mTris[n]->drawPreview();
-		}
+		for (int g = 0; g < (int)mTriangleGroups.size(); g++)
+    {
+      mTriangleGroups[g]->drawPreview();
+    }
 	}
 };

@@ -104,8 +104,8 @@ namespace RateRacerGUI
       this.mi1280x1024 = new System.Windows.Forms.MenuItem();
       this.miRender = new System.Windows.Forms.MenuItem();
       this.panel2 = new System.Windows.Forms.Panel();
-      this.comboBox1 = new System.Windows.Forms.ComboBox();
       this.propertyGrid1 = new System.Windows.Forms.PropertyGrid();
+      this.comboBox1 = new System.Windows.Forms.ComboBox();
       this.panel2.SuspendLayout();
       this.SuspendLayout();
       // 
@@ -207,16 +207,6 @@ namespace RateRacerGUI
       this.panel2.Size = new System.Drawing.Size(176, 253);
       this.panel2.TabIndex = 1;
       // 
-      // comboBox1
-      // 
-      this.comboBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-        | System.Windows.Forms.AnchorStyles.Right)));
-      this.comboBox1.Location = new System.Drawing.Point(8, 8);
-      this.comboBox1.Name = "comboBox1";
-      this.comboBox1.Size = new System.Drawing.Size(160, 21);
-      this.comboBox1.TabIndex = 0;
-      this.comboBox1.Text = "comboBox1";
-      // 
       // propertyGrid1
       // 
       this.propertyGrid1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -233,6 +223,17 @@ namespace RateRacerGUI
       this.propertyGrid1.ToolbarVisible = false;
       this.propertyGrid1.ViewBackColor = System.Drawing.SystemColors.Window;
       this.propertyGrid1.ViewForeColor = System.Drawing.SystemColors.WindowText;
+      this.propertyGrid1.PropertyValueChanged += new System.Windows.Forms.PropertyValueChangedEventHandler(this.propertyGrid1_PropertyValueChanged);
+      // 
+      // comboBox1
+      // 
+      this.comboBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+        | System.Windows.Forms.AnchorStyles.Right)));
+      this.comboBox1.Location = new System.Drawing.Point(8, 8);
+      this.comboBox1.Name = "comboBox1";
+      this.comboBox1.Size = new System.Drawing.Size(160, 21);
+      this.comboBox1.TabIndex = 0;
+      this.comboBox1.Text = "comboBox1";
       // 
       // MainForm
       // 
@@ -384,6 +385,11 @@ namespace RateRacerGUI
       {
         //mRenderForm.setResolution( mRenderSize );
       }
+    }
+
+    private void propertyGrid1_PropertyValueChanged(object s, System.Windows.Forms.PropertyValueChangedEventArgs e)
+    {
+      glPreviewControl1.Invalidate();
     }
 
   }

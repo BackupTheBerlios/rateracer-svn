@@ -79,6 +79,11 @@ public:
 		for (int n = 0; n < (int)mMeshes.size(); n++) {
 			delete mMeshes[n];
 		}
+
+    MaterialMap::iterator mat;
+    for (mat = mMaterialMap.begin(); mat != mMaterialMap.end(); mat++) {
+      delete mat->second;
+    }
 	}
 
 	int mTotalNumTris;
@@ -86,7 +91,6 @@ public:
   typedef std::map< std::string, Material* > MaterialMap;
   MaterialMap mMaterialMap;
 
-	std::vector<Material*> mMaterials;
 	std::vector<TriMesh*> mMeshes;
 
 	TriMesh *lastHit;
@@ -151,11 +155,23 @@ public:
 		return lastHit->getTangent(p);
 	}
 
-	void rasterize(Grid *grid)
+  /*void rasterize(Grid *grid)
 	{
 		for (int n = 0; n < (int)mMeshes.size(); n++) {
 			mMeshes[n]->rasterize(grid);
 		}
+	}*/
+
+	void drawBoundingBoxes()
+	{
+		for (int n = 0; n < (int)mMeshes.size(); n++) {
+			mMeshes[n]->drawBoundingBoxes();
+		}
+
+		material->setPreviewMaterial();
+		Vec3 min, max;
+		calcBounds(min, max);
+		drawAAWireBox(max - min, min);
 	}
 
 	void drawPreview()

@@ -122,9 +122,9 @@ void Scene::InitScene()
 // Load some mesh object
 
 	obj = new Model("models/test.chunks");
+  setRandomSeed();
   Model *model = (Model*)obj;
   MaterialMap::iterator m = model->mMaterialMap.begin();
-  setRandomSeed();
   for(; m != model->mMaterialMap.end(); m++)
   {
     m->second->diffColor.assign(nrand(), nrand(), nrand());
@@ -145,7 +145,7 @@ void Scene::InitScene()
 
 #if 0
 	obj = new Model("models/cow.gw");
-	mat = ((Model*)obj)->mMaterials[0];
+	mat = ((Model*)obj)->mMaterialMap["MyCoolShader"];
 	mat->diffColor.assign(0.1f, 0, 0.2f);
 	mat->specColor.assign(0.1f, 0, 0.2f);
 	mat->shininess = 50;
@@ -162,7 +162,7 @@ void Scene::InitScene()
 	//obj = new Model("models/f5.gw");
 	//obj = new Model("models/legoracer.gw");
 	//obj = new Model("models/fiat.gw");
-	mat = ((Model*)obj)->mMaterials[0];
+	mat = ((Model*)obj)->mMaterialMap["test"];
 	mat->diffColor.assign(1,1,1);
 	mat->shininess = 500.0f;
 	mat->fresnelAmountAtNormalIncidence = cFresnelGlass;
@@ -172,7 +172,7 @@ void Scene::InitScene()
 
 #if 0
 	obj = new Model("models/texture_sphere.gw");
-	mat = ((Model*)obj)->mMaterials[0];
+	mat = ((Model*)obj)->mMaterialMap["test"];
 	//mat->fresnelAmountAtNormalIncidence = 2*cFresnelGlass;
 	mat->loadTexture("textures/earth.bmp");
 	mShapes.push_back(obj);
@@ -511,6 +511,10 @@ void Scene::drawScenePreview()
 		glLighti(GL_LIGHT0+i, GL_SPOT_CUTOFF, 180);
 		//glLightfv(GL_LIGHT0+i, GL_SPOT_DIRECTION, lightdir);
 		glEnable(GL_LIGHT0+i);
+	}
+
+	for (int i = 0; i < mNumShapes; i++) {
+		mShapes[i]->drawBoundingBoxes();
 	}
 
 	for (int i = 0; i < mNumShapes; i++) {

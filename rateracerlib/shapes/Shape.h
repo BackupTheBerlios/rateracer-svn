@@ -10,7 +10,7 @@
 #include "Material.h"
 
 class Vec3;
-class Grid;
+//class Grid;
 
 // NOTE: Shape primitives should be convex for optimization assumptions to work!
 // Maybe add: kDOP, metaballs
@@ -44,8 +44,9 @@ public:
 
 	virtual Vec2 getUV(const Vec3& p) { return Vec2(0,0); }
 
-	virtual void rasterize(Grid *grid) {}
+	//virtual void rasterize(Grid *grid) {}
 
+  virtual void drawBoundingBoxes() {}
 	virtual void drawPreview() = 0;
 
 	Material const *material;

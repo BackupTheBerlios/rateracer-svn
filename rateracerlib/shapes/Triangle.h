@@ -2,23 +2,42 @@
 
 #include "Shape.h"
 
+#include "DebugDraw.h"
+
 //#include "mathlib/triboxtest.h"
 
 class Triangle : public Shape
 {
 public:
+	Triangle() {}
+
 	Triangle(Vec3 *V0, Vec3 *V1, Vec3 *V2)
 	{
-		v0 = V0; v1 = V1; v2 = V2;
-		Vec3 e1 = *v1 - *v0;
-		Vec3 e2 = *v2 - *v0;
-		faceNormal = cross(e1,e2).normalize();
+    setVertices(V0, V1, V2);
 	}
 
 	virtual ~Triangle() {}
 
+  void setVertices(Vec3 *V0, Vec3 *V1, Vec3 *V2)
+  {
+		v0 = V0; v1 = V1; v2 = V2;
+		Vec3 e1 = *v1 - *v0;
+		Vec3 e2 = *v2 - *v0;
+		faceNormal = cross(e1,e2).normalize();
+  }
+
+  void setNormals(Vec3 *N0, Vec3 *N1, Vec3 *N2)
+  {
+		n0 = N0; n1 = N1; n2 = N2;
+  }
+
+  void setUVs(Vec2 *UV0, Vec2 *UV1, Vec2 *UV2)
+  {
+		uv0 = UV0; uv1 = UV1; uv2 = UV2;
+  }
+
 	Vec3 *v0, *v1, *v2;
-	Vec3 *N0, *N1, *N2;
+	Vec3 *n0, *n1, *n2;
 	Vec2 *uv0, *uv1, *uv2;
 
 	Vec3 faceNormal;
@@ -87,7 +106,7 @@ public:
 
 	Vec3 getNormal(const Vec3& p)
 	{
-		return ((1-u-v) * (*N0) + u * (*N1) + v * (*N2)).normalize();
+		return ((1-u-v) * (*n0) + u * (*n1) + v * (*n2)).normalize();
 	}
 
 	Vec3 getPrimitiveNormal(const Vec3& p)
@@ -150,6 +169,14 @@ public:
 		}
 	}
 	*/
+
+	void drawBoundingBoxes()
+	{
+		//material->setPreviewMaterial();
+		Vec3 min, max;
+		calcBounds(min, max);
+		drawAAWireBox(max - min, min);
+	}
 
 	void drawPreview()
 	{

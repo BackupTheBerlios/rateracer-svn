@@ -306,15 +306,17 @@ namespace RateRacerGUI
     private void mTimer_Tick(object sender, System.EventArgs e)
     {
       this.bmpControl1.updateBitmap();
+
       int percentage = this.bmpControl1.renderingPercentage();
       float timeSecs = this.bmpControl1.renderingTimeSeconds();
+
       labelStatus.Text = "Rendering: " + percentage + "%" +
         " Elapsed time: " + timeString(timeSecs);
-      Console.WriteLine(labelStatus.Text);
+      //Console.WriteLine(labelStatus.Text);
+
       if (percentage == 100)
       {
         mTimer.Stop();
-        Console.WriteLine("Stop!");
       }
     }
 
