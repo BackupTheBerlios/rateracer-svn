@@ -21,6 +21,7 @@
 #include <maya/MFnNurbsSurface.h>
 #include <maya/MFnNurbsCurve.h>
 #include <maya/MFnComponent.h>
+#include <maya/MFnSingleIndexedComponent.h>
 #include <maya/MFnCharacter.h>
 #include <maya/MFnClip.h>
 #include <maya/MFnMotionPath.h>
@@ -929,26 +930,41 @@ void chunksExport::importMeshes(const char *fullpath, bool /*doimport*/)
 	serializer.close();
 }
 
+MStatus AssignToShadingGroup(const MObject  &shadingGroup,
+                             const MDagPath &dagPath,
+                             const MObject  &component)
+{
+  MStatus status;
+  MFnSet fnSG( shadingGroup, &status );
+  //printf("fnSG: %s\n", fnSG.name().asChar());
+
+  if ( fnSG.restriction() != MFnSet::kRenderableOnly )
+    return MS::kFailure;
+
+  //printf("Adding member...\n");
+  status = fnSG.addMember( dagPath, component );
+  if ( status != MS::kSuccess )
+  {
+    printf("assignToShadingGroup() could not add Dag/Component to SG !\n");
+  }
+  return status;
+}
+
+void execCmd(MString cmd)
+{
+  MGlobal::executeCommand(cmd, true);
+}
+
 bool skipMeshTag(FILE *infile, int& numLines)
 {
+  char line[255];
+
   numLines = 0;
-  char line[1024];
-  if (fgets(line, 1024, infile) == NULL)
-  {
-    printf("Premature end of file!\n");
-    return false;
-  }
-  MString str;
-  str.set(line, (int)strlen(line) - 1);
-  if (!str.isInt())
-  {
-    printf("Failed to parse corners tag!\n");
-    return false;
-  }
-  numLines = str.asInt();
+  fscanf(infile, "%d", &numLines);
+
   for (int n = 0; n < numLines; n++)
   {
-    if (fgets(line, 1024, infile) == NULL)
+    if (fgets(line, 255, infile) == NULL)
     {
       printf("Premature end of file!\n");
       return false;
@@ -970,9 +986,7 @@ void chunksExport::importMeshFile(const char *fullpath)
 
   printf("\nImporting mesh file '%s'\n\n", fullpath);
 
-  char line[1024];
-  MString str;
-  std::string sstr;
+  char line[255];
 
   int numVertices = 0;
   int numTris = 0;
@@ -983,101 +997,79 @@ void chunksExport::importMeshFile(const char *fullpath)
   MIntArray faceEdgeCounts;
   MIntArray faceVerts;
 
+  typedef std::map< int, std::vector<int> > MatIndexMap;
+  MatIndexMap materialMap;
+
   while (!feof(infile))
   {
-    if (fgets(line, 1024, infile) == NULL)
+    if (fgets(line, 255, infile) == NULL)
     {
       break;
     }
-    str.set(line, (int)strlen(line) - 1);
-    str.toLowerCase();
-    sstr = str.asChar();
-    
-    if (sstr.find("dimension") != std::string::npos)
+    strlwr(line);
+
+    if (strstr( line, "dimension" ) != NULL)
     {
-      if (fgets(line, 1024, infile) == NULL)
+      int dimension = 0;
+      fscanf(infile, "%d", &dimension);
+      if (dimension != 3)
       {
-        printf("Premature end of file!\n");
-        break;
-      }
-      str.set(line, (int)strlen(line) - 1);
-      if (!str.isInt())
-      {
-        printf("Failed to parse dimension tag '%s'!\n", str.asChar());
-        break;
-      }
-      if (str.asInt() != 3)
-      {
-        printf("Dimension is %d, not 3!\n", str.asInt());
+        printf("Dimension is %d, not 3!\n", dimension);
         break;
       }
     }
-    else if (sstr.find("vertices") != std::string::npos)
+    else if (strstr( line, "vertices" ) != NULL)
     {
-      if (fgets(line, 1024, infile) == NULL)
-      {
-        printf("Premature end of file!\n");
-        break;
-      }
-      str.set(line, (int)strlen(line) - 1);
-      if (!str.isInt())
-      {
-        printf("Failed to parse vertices tag!\n");
-        break;
-      }
-      numVertices = str.asInt();
+      fscanf(infile, "%d", &numVertices);
+
       printf("Num vertices: %d\n", numVertices);
       const float cBig = 1e20f;
       float xmin =  cBig, ymin =  cBig, zmin =  cBig;
       float xmax = -cBig, ymax = -cBig, zmax = -cBig;
       for (int n = 0; n < numVertices; n++)
       {
-        if (fgets(line, 1024, infile) == NULL)
-        {
-          printf("Premature end of file!\n");
-          break;
-        }
-        float x = 0, y = 0, z = 0;
-        sscanf(line, "%e %e %e", &x, &y, &z);
-        if (xmin > x) xmin = x;
-        if (ymin > y) ymin = y;
-        if (zmin > z) zmin = z;
-        if (xmax < x) xmax = x;
-        if (ymax < y) ymax = y;
-        if (zmax < z) zmax = z;
+        float x = 0, y = 0, z = 0; int ref;
+        fscanf(infile, "%e %e %e %d", &x, &y, &z, &ref);
+
+        if (xmin > x) xmin = x; if (ymin > y) ymin = y; if (zmin > z) zmin = z;
+        if (xmax < x) xmax = x; if (ymax < y) ymax = y; if (zmax < z) zmax = z;
 
         MFloatPoint pnt( x, y, z );
         points.append( pnt );
       }
-      printf("BBox: (%f %f %f) - (%f %f %f)\n",
-        xmin, ymin, zmin, xmax, ymax, zmax);
-      printf("Size: (%f %f %f)\n",
-        xmax - xmin, ymax - ymin, zmax - zmin);
+      printf("BBox: (%f %f %f) - (%f %f %f)\n", xmin, ymin, zmin, xmax, ymax, zmax);
+      printf("Size: (%f %f %f)\n", xmax - xmin, ymax - ymin, zmax - zmin);
+      float maxDim = xmax - xmin;
+      if (ymax - ymin > maxDim) maxDim = ymax - ymin;
+      if (zmax - zmin > maxDim) maxDim = zmax - zmin;
+      float minDim = xmax - xmin;
+      if (ymax - ymin < maxDim) maxDim = ymax - ymin;
+      if (zmax - zmin < maxDim) maxDim = zmax - zmin;
+      float scale = 1.0f;
+      while (maxDim > 10.0f) {
+        maxDim *= 0.5f; scale *= 0.5f;
+      }
+      while (minDim < 0.1f) {
+        minDim *= 2.0f; scale *= 2.0f;
+      }
+      if (scale != 1.0f) {
+        printf("Changing scale to %f !\n", scale);
+        for (n = 0; n < numVertices; n++) {
+          points[n].x *= scale;
+          points[n].y *= scale;
+          points[n].z *= scale;
+        }
+      }
     }
-    else if (sstr.find("triangles") != std::string::npos)
+    else if (strstr( line, "triangles" ) != NULL)
     {
-      if (fgets(line, 1024, infile) == NULL)
-      {
-        printf("Premature end of file!\n");
-        break;
-      }
-      str.set(line, (int)strlen(line) - 1);
-      if (!str.isInt())
-      {
-        printf("Failed to parse triangles tag!\n");
-        break;
-      }
-      numTris = str.asInt();
+      fscanf(infile, "%d", &numTris);
+
       printf("Num triangles: %d\n", numTris);
       for (int n = 0; n < numTris; n++)
       {
-        if (fgets(line, 1024, infile) == NULL)
-        {
-          printf("Premature end of file!\n");
-          break;
-        }
-        int v1 = 0, v2 = 0, v3 = 0, m = 0;
-        sscanf(line, "%d %d %d %d", &v1, &v2, &v3, &m);
+        int v1 = 0, v2 = 0, v3 = 0, mat = 0;
+        fscanf(infile, "%d %d %d %d", &v1, &v2, &v3, &mat);
         if (v1 < 1 || v1 > numVertices ||
             v2 < 1 || v2 > numVertices ||
             v3 < 1 || v3 > numVertices)
@@ -1090,24 +1082,26 @@ void chunksExport::importMeshFile(const char *fullpath)
         faceVerts.append( v2 - 1 );
         faceVerts.append( v3 - 1 );
         faceEdgeCounts.append( 3 );
+
+        materialMap[mat].push_back(n);
       }
     }
-    else if (sstr.find("corners") != std::string::npos)
+    else if (strstr( line, "corners" ) != NULL)
     {
       if (!skipMeshTag(infile, numLinesSkipped)) break;
       printf("Num corners: %d (skipped)\n", numLinesSkipped);
     }
-    else if (sstr.find("edges") != std::string::npos)
+    else if (strstr( line, "edges" ) != NULL)
     {
       if (!skipMeshTag(infile, numLinesSkipped)) break;
       printf("Num edges: %d (skipped)\n", numLinesSkipped);
     }
-    else if (sstr.find("ridges") != std::string::npos)
+    else if (strstr( line, "ridges" ) != NULL)
     {
       if (!skipMeshTag(infile, numLinesSkipped)) break;
       printf("Num ridges: %d (skipped)\n", numLinesSkipped);
     }
-    else if (sstr.find("end") != std::string::npos)
+    else if (strstr( line, "end" ) != NULL)
     {
       printf("Found end tag!\n");
     }
@@ -1116,8 +1110,8 @@ void chunksExport::importMeshFile(const char *fullpath)
       printf("// %s", line);
     }
   }
-
   fclose(infile);
+
 
   //int edgesPerFace = 3;
   //int numFaceVerts = numTriangles * edgesPerFace;
@@ -1125,8 +1119,8 @@ void chunksExport::importMeshFile(const char *fullpath)
 
   MStatus stat;
 
-  MFnMesh fnPoly;
-  MObject newTransformNode = fnPoly.create( numVertices, numTris, points, 
+  MFnMesh fnMesh;
+  MObject newTransformNode = fnMesh.create( numVertices, numTris, points, 
     faceEdgeCounts, faceVerts, MObject::kNullObj, &stat );
   if (stat != MS::kSuccess) {
     printf("Could not create MFnMesh\n");
@@ -1134,26 +1128,87 @@ void chunksExport::importMeshFile(const char *fullpath)
   }
 
   // Primitive is created so tell shape it has changed
-  fnPoly.updateSurface();
+  fnMesh.updateSurface();
+  //fnMesh.syncObject();
+  //fnMesh.userNode()
 
-  MDGModifier dgModifier;
-  dgModifier.renameNode( newTransformNode, "pImportedMesh1" );
-  dgModifier.doIt();
+  //MDGModifier dgModifier;
+  //dgModifier.renameNode( newTransformNode, "pImportedMesh1" );
+  //dgModifier.doIt();
 
-  // Put the polygon into a shading group
-  MString cmd ("sets -e -fe initialShadingGroup ");
-  cmd += fnPoly.name();
-  dgModifier.commandToExecute( cmd );
+  // Put the polygon into initial shading group
+  //execCmd("sets -e -fe initialShadingGroup " + fnMesh.name());
 
-  MFnDagNode fnDagNode( newTransformNode, &stat );
-  if ( MS::kSuccess == stat )
+  MDagPath polyDagPath;
+  MItDag dagIterator(MItDag::kDepthFirst, MFn::kMesh);
+  for( ; !dagIterator.isDone(); dagIterator.next() )
   {
-    cmd = "select ";
-    cmd += fnDagNode.name();
-    dgModifier.commandToExecute( cmd );
+    dagIterator.getPath(polyDagPath);
+    MFnDagNode polyDagNode( polyDagPath );
+    //printf("Dag node: %s path: %s\n",
+    //  polyDagNode.name().asChar(), polyDagPath.fullPathName().asChar());
+    if (polyDagNode.name() == fnMesh.name())
+    {
+      //printf("Found matching mesh node...\n");
+      break;
+    }
+  }
+  MFnDagNode fnDagNode( polyDagPath, &stat );
+  MDagPath dagPath = fnDagNode.dagPath();
+
+  /////////////////////////////////////////////////////////////////////////////////
+
+  printf("Num materials: %d\n", materialMap.size());
+
+  MatIndexMap::iterator it;
+  for (it = materialMap.begin(); it != materialMap.end(); it++)
+  {
+    MFnPhongShader fnPhong;
+    MObject newShader = fnPhong.create();
+    float r = float(rand()) / float(RAND_MAX);
+    float g = float(rand()) / float(RAND_MAX);
+    float b = float(rand()) / float(RAND_MAX);
+    MColor color(r,g,b);
+    fnPhong.setColor(color);
+    MString shaderName = fnPhong.name();
+
+    printf("  Material #%d: %d triangles, assigning shader '%s'\n",
+      it->first, it->second.size(), shaderName.asChar());
+
+    execCmd("sets -renderable true -noSurfaceShader true -empty -name " + shaderName + "SG");
+    execCmd("connectAttr -f " + shaderName + ".outColor " + shaderName + "SG.surfaceShader");
+
+    MSelectionList shaderSel;
+    MGlobal::getSelectionListByName( shaderName + "SG", shaderSel );
+    MObject selectedSG;
+    shaderSel.getDependNode( 0, selectedSG );
+    //printf("Selected shadergroup node (%d items in selection)\n", shaderSel.length());
+    //printf("Selected shadergroup: %s %s %s\n",
+    //  selectedSG.apiTypeStr(), nodeType(selectedSG).asChar(), nodeName(selectedSG).asChar());
+
+    MFnSingleIndexedComponent faces;
+    MObject components = faces.create( MFn::kMeshPolygonComponent );
+    std::vector<int>::iterator f;
+    for (f = it->second.begin(); f != it->second.end(); f++) {
+      faces.addElement( (*f) );
+    }
+    /*
+    MSelectionList selectedFaces;
+    selectedFaces.add(dagPath, components);
+    MGlobal::setActiveSelectionList( selectedFaces );
+    execCmd("ls -sl");
+    */
+    AssignToShadingGroup( selectedSG, dagPath, components );
   }
 
-  dgModifier.doIt();
+  execCmd("modelEditor -edit -displayAppearance smoothShaded -activeOnly false modelPanel4");
+
+  execCmd("select -r " + fnDagNode.name());
+  execCmd("FrameSelectedInAllViews");
+  execCmd("fitAllPanels -selected");
+
+  //execCmd("FrameAllInAllViews");
+  //execCmd("fitAllPanels -all");
 }
 
 void chunksExport::importSceneData(	const char *fullpath, bool /*doimport*/)
