@@ -91,7 +91,7 @@
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)/chunksExport.mll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="C:\Program\AliasWavefront\Maya4.5\lib"
+				AdditionalLibraryDirectories=""
 				GenerateDebugInformation="TRUE"
 				SubSystem="2"
 				OptimizeReferences="2"
