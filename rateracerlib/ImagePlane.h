@@ -50,7 +50,7 @@ public:
 	void PostProcess();
 
 	void updateGdiPlusBitmap();
-	void displayGdiPlusBitmap(HDC hdc);
+	void displayGdiPlusBitmap(HDC hdc, float zoom);
 
 	void saveImage(const char *filename = NULL);
 

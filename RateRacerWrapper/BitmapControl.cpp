@@ -63,11 +63,11 @@ namespace Gweronimo
 		this->Invalidate(false);
 	}
 
+	/*
 	void BmpControl::createBitmap()
 	{
 		//mBitmap = new Bitmap(100,100,PixelFormat::Format32bppArgb);
 
-		/*
 		mBMI = new BITMAPINFO;
 		memset(mBMI, 0, sizeof(BITMAPINFO));
     mBMI->bmiHeader.biSize        = sizeof(BITMAPINFOHEADER);
@@ -90,13 +90,23 @@ namespace Gweronimo
 
 		//mPixels = new BYTE[100*100*3];
 		//memset(mPixels, 0, 100*100*3);
-		*/
 	}
 
 	void BmpControl::destroyBitmap()
 	{
-		//delete mPixels;
-		//delete mBMI;
+		delete mPixels;
+		delete mBMI;
+	}*/
+
+	void BmpControl::setResolution(System::Drawing::Size* renderSize)
+	{
+		RateRacerEngine::mImagePlane->prepareImage(
+			renderSize->Width, renderSize->Height);
+	}
+
+	void BmpControl::setZoom(float zoom)
+	{
+		mZoom = zoom;
 	}
 
 	void BmpControl::OnPaintBackground(PaintEventArgs* e)
@@ -125,7 +135,8 @@ namespace Gweronimo
 			//								0,0, 100,100, mPixels, mBMI, DIB_RGB_COLORS, SRCCOPY);
 
 			RateRacerEngine::mImagePlane->updateGdiPlusBitmap();
-			RateRacerEngine::mImagePlane->displayGdiPlusBitmap(realHDC);
+			RateRacerEngine::mImagePlane->displayGdiPlusBitmap(
+				realHDC, mZoom);
 
 			e->Graphics->ReleaseHdc(hdc);
 /*

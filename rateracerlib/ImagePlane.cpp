@@ -458,6 +458,8 @@ void ImagePlane::DrawRandomDistribution()
 
 void ImagePlane::prepareImage(int width, int height)
 {
+  mRenderThreadStop = true;
+
 	mCritSecPixels.lock();
 
 	mRenderWidth  = width;
@@ -705,7 +707,7 @@ void ImagePlane::updateGdiPlusBitmap()
 	}
 }
 
-void ImagePlane::displayGdiPlusBitmap(HDC hdc)
+void ImagePlane::displayGdiPlusBitmap(HDC hdc, float zoom)
 {
 	Graphics graphics(hdc);
 	//INT row, col;
@@ -751,7 +753,9 @@ void ImagePlane::displayGdiPlusBitmap(HDC hdc)
 
 	// Display the altered bitmap.
 	graphics.SetInterpolationMode(InterpolationModeNearestNeighbor); 
-	//graphics.SetInterpolationMode(InterpolationModeBicubic); 
-	graphics.DrawImage(&bitmap, 0, 0, 401, 401);
-	//graphics.DrawImage(&bitmap, 0, 0, 200, 200);
+	//graphics.SetInterpolationMode(InterpolationModeBicubic);
+
+	int width  = (int)(zoom * (float)mRenderWidth)  + (int)zoom;
+	int height = (int)(zoom * (float)mRenderHeight) + (int)zoom;
+	graphics.DrawImage(&bitmap, 0, 0, width, height);
 }

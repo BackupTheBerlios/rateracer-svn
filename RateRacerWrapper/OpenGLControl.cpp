@@ -85,6 +85,8 @@ namespace Gweronimo
 		//Console::WriteLine(S"OpenGLControl got resize: {0} x {1}",
 		//	this->Width.ToString(), this->Height.ToString());
 
+		this->Invalidate(false);
+
 		Control::OnResize(e);
 	}
 

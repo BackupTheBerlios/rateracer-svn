@@ -30,7 +30,8 @@ namespace Gweronimo
 			mPixels = NULL;
 			mBMI = NULL;
 
-			mBitmap = NULL;
+			mZoom = 1;
+			//mBitmap = NULL;
 		}
 
 		void Dispose(bool disposing)
@@ -44,8 +45,11 @@ namespace Gweronimo
 			}
 		}
 
-		void createBitmap();
-		void destroyBitmap();
+		//void createBitmap();
+		//void destroyBitmap();
+
+		void setResolution(System::Drawing::Size* renderSize);
+		void BmpControl::setZoom(float zoom);
 
 		__property Windows::Forms::CreateParams * get_CreateParams();
 
@@ -66,7 +70,8 @@ namespace Gweronimo
 		//Timers::Timer* mTimer;
 		Windows::Forms::Timer* mTimer;
 
-		Bitmap* mBitmap;
+		float mZoom;
+		//Bitmap* mBitmap;
 
 		BYTE * mPixels;
 		BITMAPINFO* mBMI;
