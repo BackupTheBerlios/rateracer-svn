@@ -1,35 +1,3 @@
-/*
-TODO:
-- Ctrl-F5 to start program in Release!
-- pressing 'j' twice deadlocks program!
-- Check stack and heap usage!
-- fast sqrt etc
-- Clamp all dot products where applicable! posDot(a,b)
-- Check color bleeding!
-- Simulated refractive thickness (for single-sided meshes with occluded edges)
-- Use HDRI loader from AL, or cubemaps...
-- GIF anim / AVI
-- adaptive epsilon (ray length)? multiple epsilons?
-- offset epsilon along normal instead (+ ray direction?)
-- GetProfileInt/Struct, timing class
-- path-branching at deeper levels if ray is specular/refracted...
-- StretchDIBBits()
-- mark rectangle for subrendering!
-- (turn slow stuff off while changing view?)
-- rerender when view has changed and stabilized, auto-hide preview
-- better preview: fix all shape types
-- render progress/timing in gl window
-- camera class (incl ray handling), colorRGB class?
-- more lightsrc subclasses! Calc lighting inside lightsrc class?
-- parallel/directional light?
-- move light around (fix last touches only!) (move to control class?)
-- glow/halo, distance functions
-- efficient ground/wall/roof plane tests
-- hardcoded floor, headlight?
-- STD_LOOP etc, or replace STL?
-- gloss map, radial fog, fuzzy/fogged refl/refr
-*/
-
 #include <io.h> // For _findfirst() etc
 
 #include "ImagePlane.h"
@@ -49,8 +17,6 @@ static char THIS_FILE[] = __FILE__;
 
 ImagePlane::ImagePlane()
 {
-	//mShowWindowInitially = SW_SHOWMAXIMIZED;
-
 	mRenderWidth = 200; mRenderHeight = 200;//150
 
 	mDrawPreview = true;
@@ -62,16 +28,6 @@ ImagePlane::ImagePlane()
 	mRelativeAperture = 0;//0.10f;
 	mFocusDistance = 2.0f;
 	mNumDOFSamples = 25;//160;
-
-	/*
-	// TODO: setup camera in scene...
-	mCamControl->mLookDistance  = 50.0f;
-	mCamControl->mLookAzimuth   =  30;
-	mCamControl->mLookElevation = -30;
-	mCamControl->mLookAt.assign(0,0,1.5f);
-	//mCamControl->mUseTrackballControl = false;
-	mCamControl->mFOV = 60;
-	*/
 
 	mPixels = NULL;
 	mFatPixels = NULL;
@@ -174,48 +130,6 @@ void ImagePlane::Shutdown()
 
 	delete [] mPixels;
 	delete [] mFatPixels;
-}
-
-void ImagePlane::RenderScene(int mWindowWidth, int mWindowHeight)
-{
-	//mCamControl->keepElevationAboveGroundPlane();
-	//mCamControl->setView();
-	//TestLabWnd::RenderScene();
-
-	mCamControl->SetGLOrthoProjection();
-
-	glDisable(GL_LIGHTING);
-	glDisable(GL_TEXTURE_2D);
-	//glEnable(GL_COLOR_MATERIAL);
-
-	//if (mDrawRealtime) SetRenderThreadRedraw(true);
-
-	int sizex = mRenderWidth;
-	int sizey = mRenderHeight;
-	while (sizex > mWindowWidth || sizey > mWindowHeight) {
-		sizex /= 2; sizey /= 2;
-	}
-	while (2*sizex < mWindowWidth && 2*sizey < mWindowHeight) {
-		sizex *= 2; sizey *= 2;
-	}
-	int orix = (mWindowWidth  - sizex) / 2;
-	int oriy = (mWindowHeight - sizey) / 2;
-
-	//for (int n = 0; n < mRenderHeight * mRenderWidth; n++) {
-	//	mPixels[n].assign(0,0,0);
-	//}
-
-	//updateGdiPlusBitmap(mPixels, mRenderWidth, mRenderHeight);
-
-	//glRasterPos2i((mWindowWidth  - mRenderWidth ) / 2,
-	//							(mWindowHeight - mRenderHeight) / 2);
-	//glDrawPixels(mRenderWidth, mRenderHeight, GL_RGB, GL_FLOAT, mPixels);
-
-	//DrawRandomDistribution();
-
-	//if (mDrawPreview) {
-		//drawPreview(orix, oriy, sizex, sizey);
-	//}
 }
 
 //int mMaxLevel;
@@ -497,6 +411,7 @@ void ImagePlane::PostProcess()
 	}
 }
 
+/*
 void ImagePlane::DrawRandomDistribution()
 {
 	int size = 300;
@@ -508,7 +423,7 @@ void ImagePlane::DrawRandomDistribution()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDisable(GL_SCISSOR_TEST);
 
-	mCamControl->SetGLOrthoProjection();
+	SetGLOrthoProjection();
 
 	glDisable(GL_LIGHTING);
 	glDisable(GL_TEXTURE_2D);
@@ -538,16 +453,15 @@ void ImagePlane::DrawRandomDistribution()
 		glVertex2f(size*(0.5f*vec[0] + 0.5f), size*(-0.5f*vec[2] + 0.5f));
 	}
 
-	/*
-	float xRnd, yRnd;
-	for (int n = 0; n < 1000; n++) {
-		rndCircle(xRnd,yRnd);
-		glVertex2f(size*(xRnd + 0.5f), size*(yRnd + 0.5f));
-	}
-	*/
+	//float xRnd, yRnd;
+	//for (int n = 0; n < 1000; n++) {
+	//	rndCircle(xRnd,yRnd);
+	//	glVertex2f(size*(xRnd + 0.5f), size*(yRnd + 0.5f));
+	//}
 
 	glEnd();
 }
+*/
 
 void ImagePlane::prepareImage(int width, int height)
 {
@@ -653,11 +567,6 @@ void ImagePlane::onChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 	// TODO: Add your message handler code here and/or call default
 	switch (toupper(nChar))
 	{
-		case 'T' :
-			mCamControl->mUseTrackballControl = !mCamControl->mUseTrackballControl;
-			mCamControl->mLookAt.assign(0,0,0);
-			break;
-
 		// 'F1', 'T', 'L' are occupied...
 		case 'W' : mDrawRealtime = !mDrawRealtime; break;
 		case 'A' :

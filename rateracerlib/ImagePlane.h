@@ -44,7 +44,6 @@ public:
 	//bool onCommand(UINT id, UINT ctrlNotifyCode, LONG_PTR pCtrl);
 
 	virtual void Init();
-	virtual void RenderScene(int mWindowWidth, int mWindowHeight);
 	virtual void Shutdown();
 
 	void TraceScene();
@@ -52,7 +51,7 @@ public:
 
 	void saveImage(const char *filename = NULL);
 
-	void DrawRandomDistribution();
+	//void DrawRandomDistribution();
 
 	bool mDrawPreview;
 	bool mDrawRealtime;

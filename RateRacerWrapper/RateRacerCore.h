@@ -30,14 +30,18 @@ namespace RateRacerCore
 			mCamControl = new CameraControl();
 			mRayEngine = new RayEngine();
 			mRayEngine->init();
+
 			mImagePlane = new ImagePlane();
 			mImagePlane->mCamControl = mCamControl;
 			mImagePlane->mRayEngine = mRayEngine;
+      mImagePlane->Init();
 		}
 
 		static void finish()
 		{
+      mImagePlane->Shutdown();
 			delete mImagePlane;
+
 			mRayEngine->shutdown();
 			delete mRayEngine;
 			delete mCamControl;
@@ -47,10 +51,12 @@ namespace RateRacerCore
 
 		static void render()
 		{
+      // Transfer camera settings here!!!
 			mImagePlane->SetRenderThreadRedraw(true);
 		}
 
 		static CameraControl* mCamControl;
+
 		static RayEngine *mRayEngine;
 		static ImagePlane *mImagePlane;
 	};

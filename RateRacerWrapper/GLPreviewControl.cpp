@@ -118,14 +118,26 @@ namespace Gweronimo
 		OpenGLControl::OnMouseMove(e);
 	}
 
+  /*
+  void ::onChar(UINT nChar, UINT nRepCnt, UINT nFlags)
+  {
+    // TODO: Add your message handler code here and/or call default
+    switch (toupper(nChar))
+    {
+      case 'T' :
+      mCamControl->mUseTrackballControl = !mCamControl->mUseTrackballControl;
+      mCamControl->mLookAt.assign(0,0,0);
+      break;
+    }
+  }
+  */
+
 	void GLPreviewControl::InitGL()
 	{
-		RateRacerEngine::mImagePlane->Init();
 	}
 
 	void GLPreviewControl::FinishGL()
 	{
-		RateRacerEngine::mImagePlane->Shutdown();
 	}
 
 	void GLPreviewControl::PaintGL()
@@ -161,8 +173,6 @@ namespace Gweronimo
 		//RateRacerEngine::mRayEngine->dbgDrawGrid();
 
 		RateRacerEngine::mRayEngine->drawScenePreview();
-
-		RateRacerEngine::mImagePlane->RenderScene(Width, Height);
 	}
 
 } // namespace

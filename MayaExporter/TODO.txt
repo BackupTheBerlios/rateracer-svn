@@ -11,4 +11,4 @@ MayaExporter (chunksExport) TODO list
 [ ] export area lights
 [ ] export spot lights
 
-
+[ ] export textures - Look at polyWriter.cpp in Maya5 SDK...

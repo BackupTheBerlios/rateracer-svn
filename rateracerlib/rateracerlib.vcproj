@@ -217,6 +217,9 @@
 		<File
 			RelativePath=".\Stratification.h">
 		</File>
+		<File
+			RelativePath=".\TODO.txt">
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
