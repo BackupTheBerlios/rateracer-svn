@@ -1008,7 +1008,11 @@ void chunksExport::importMeshFile(const char *fullpath)
     }
     strlwr(line);
 
-    if (strstr( line, "dimension" ) != NULL)
+    if (strstr( line, "#" ) != NULL)
+    {
+      // Skipping comment line...
+    }
+    else if (strstr( line, "dimension" ) != NULL)
     {
       int dimension = 0;
       fscanf(infile, "%d", &dimension);
