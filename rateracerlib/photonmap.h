@@ -63,6 +63,11 @@ public:
     float *dir,                    // direction of photon (returned)
     const Photon *p ) const;       // the photon
 
+  void get_bounding_box(float bmin[3], float bmax[3]);
+
+  int get_num_photons() { return stored_photons; }
+  const Photon* get_photons() { return photons; }
+
 private:
 
   void balance_segment(

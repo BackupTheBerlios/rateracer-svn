@@ -10,7 +10,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#define _USE_MATH_DEFINES
 #include <math.h>
+#include <malloc.h>
+
+#include "photonmap.h"
 
 /* This is the constructor for the photon map.
  * To create the photon map it is necessary to specify the
@@ -448,4 +452,8 @@ void Photon_map :: balance_segment(
   }	
 }
 
-
+void Photon_map :: get_bounding_box(float bmin[3], float bmax[3])
+{
+  bmin[0] = bbox_min[0]; bmin[1] = bbox_min[1]; bmin[2] = bbox_min[2];
+  bmax[0] = bbox_max[0]; bmax[1] = bbox_max[1]; bmax[2] = bbox_max[2];
+}
