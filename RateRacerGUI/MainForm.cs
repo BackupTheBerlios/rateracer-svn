@@ -509,7 +509,7 @@ namespace RateRacerGUI
 
     private void MainForm_Load(object sender, System.EventArgs e)
     {
-      EnableRenderButtons();
+      enableRenderButtons();
       bmpControl1.setResolution( ref mRenderSize );
       bmpControl1.setZoom( mZoom );
       bmpControl1.setInterpolation( chkInterpolate.Checked );
@@ -573,20 +573,30 @@ namespace RateRacerGUI
     void startRender()
     {
       isRendering = true;
-      EnableRenderButtons();
+      enableRenderButtons();
+
       adjustRenderSize(mRenderSize, mZoom);
       RateRacerEngine.startRendering();
+
       if (!chkAutoRender.Checked)
       {
         mTimer.Start();
       }
+
       updateRenderStatus();
     }
 
     void stopRender()
     {
-      mTimer.Stop();
       RateRacerEngine.stopRendering();
+
+      mTimer.Stop();
+
+      isRendering = false;
+      enableRenderButtons();
+      bmpControl1.updateBitmap();
+      bmpControl1.Refresh();
+      updateRenderStatus();
     }
 
     private void mTimer_Tick(object sender, System.EventArgs e)
@@ -603,11 +613,12 @@ namespace RateRacerGUI
     private void bmpControl1_PostProcessingDone(object sender, EventArgs e)
     {
       mTimer.Stop();
+
+      isRendering = false;
+      enableRenderButtons();
       bmpControl1.updateBitmap();
       bmpControl1.Refresh();
       updateRenderStatus();
-      isRendering = false;
-      EnableRenderButtons();
     }
 
     bool updateRenderStatus()
@@ -620,13 +631,18 @@ namespace RateRacerGUI
       {
         lblStatus.Text = "Rendering: Done! " + timeString(timeSecs);
       }
+      else if (!isRendering)
+      {
+        progressBar1.Value = 0;
+        lblStatus.Text = "Rendering: Stopped.";
+      }
       else if (!chkAutoRender.Checked)
       {
         lblStatus.Text = "Rendering: " + percentage + "% " + timeString(timeSecs);
       }
       else
       {
-        lblStatus.Text = "Rendering...";
+        lblStatus.Text = "Rendering silently...";
       }
 
       lblStatus.Refresh();
@@ -846,7 +862,7 @@ namespace RateRacerGUI
       glPreviewControl1.Invalidate();
     }
 
-    void EnableRenderButtons()
+    void enableRenderButtons()
     {
       btnRender.Enabled = !chkAutoRender.Checked && !isRendering;
       btnStop.Enabled   = !chkAutoRender.Checked && isRendering;
@@ -854,14 +870,24 @@ namespace RateRacerGUI
 
     private void chkAutoRender_CheckedChanged(object sender, System.EventArgs e)
     {
-      if (this.Visible)
-      {
-        EnableRenderButtons();
-      }
+      if (!this.Visible) return;
+
       if (chkAutoRender.Checked)
       {
-        if (!isRendering) startRender();
+        mTimer.Stop();
+        if (!isRendering)
+        {
+          startRender();
+        }
       }
+      else
+      {
+        //if (isRendering) mTimer.Start();
+        stopRender();
+      }
+
+      enableRenderButtons();
+      updateRenderStatus();
     }
 
     private void btnRender_Click(object sender, System.EventArgs e)

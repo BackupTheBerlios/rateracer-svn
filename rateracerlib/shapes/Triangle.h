@@ -4,6 +4,7 @@
 
 #include "DebugDraw.h"
 
+#include "Grid.h"
 #include "mathlib/triboxtest.h"
 
 class Triangle : public Shape
@@ -124,8 +125,8 @@ public:
 
 	virtual Vec2 getUV(const Vec3& p)
 	{
-		if (material->texture != NULL)
-			return ((1-u-v) * (*uv0) + u * (*uv1) + v * (*uv2));
+		if (material->mTexture != NULL)
+      return ((1-u-v) * (*uv0) + u * (*uv1) + v * (*uv2));
 		else
 			return Vec2(0,0);
 	}
@@ -179,7 +180,7 @@ public:
 
 	void drawPreview()
 	{
-		//material->setPreviewMaterial();
+		material->setPreviewMaterial();
 
 		//glPushMatrix();
 		glNormal3fv(&faceNormal[0]);

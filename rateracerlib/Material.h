@@ -2,6 +2,8 @@
 
 #include "Ray.h"
 
+#include "Texture.h"
+
 //#pragma comment(lib, "../3rdparty/corona.lib")
 //#include "3rdparty/corona.h"
 
@@ -37,12 +39,12 @@ public:
 		emitIntensity = 0.0f;
 		//lambdaShift = 0.0f;
 
-		texture = NULL;
+		mTexture = NULL;
 	}
 
 	virtual ~Material()
 	{
-		if (texture) delete texture;
+		if (mTexture) delete mTexture;
 	}
 
 	virtual void setRefractionIndex(float incident, float transmitted)
@@ -51,35 +53,20 @@ public:
 		refractInv = 1.0f / refract;
 	}
 
+  /*
 	virtual void loadTexture(const char *filepath)
 	{
-		/*
 		texture = corona::OpenImage(filepath, corona::PF_R8G8B8);
 		corona::FlipImage(texture, corona::CA_X);
 		//corona::FlipImage(texture, corona::CA_Y);
-		*/
 	}
+  */
 
 	virtual Vec3 getColor(const Vec3& p, const Vec2& uv) const
 	{
-		/*
-		if (texture != NULL) {
-			int width  = texture->getWidth();
-			int height = texture->getHeight();
-			byte* pixels = (byte*)texture->getPixels();
-			int xi = int(uv[0] * width);
-			int yi = int(uv[1] * height);
-			clamp(xi, 0, width-1);
-			clamp(yi, 0, height-1);
-			int idx = 3 * int(xi + yi*width);
-			const float f = 1.0f / 255.0f;
-			Vec3 c;
-			c[0] = f * float(pixels[idx++]);
-			c[1] = f * float(pixels[idx++]);
-			c[2] = f * float(pixels[idx++]);
-			return c;
+		if (mTexture != NULL) {
+			return mTexture->getColor(p, uv);
 		}
-		*/
 		return diffColor;
 	}
 
@@ -125,5 +112,5 @@ public:
 	//float lambdaShift;
 
 	//corona::Image* texture;
-	void *texture;
+	Texture *mTexture;
 };

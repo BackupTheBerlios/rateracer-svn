@@ -121,7 +121,7 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 	// Debug: Early return (no shading)!
 	//return matColor;
 
-  matColor = twoTonePaint(p, N,V);
+  //matColor = multiTonePaint(p, N,V);
 
 	if (material->refract > 0)
 	{
@@ -217,8 +217,7 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 			Ray rayShadow(p, L);
 			rayShadow.offset(cEpsilon, N); // TODO: Not needed because of excludeObj?!
 			Vec3 colorLight = lightSrc->color;
-			Shape *hitOccluder;
-			hitOccluder = mScene->mGrid->findHitInGrid(rayShadow, hitObject);
+			Shape *hitOccluder = findHit(rayShadow, hitObject);
 			if (hitOccluder != NULL &&
 				  rayShadow.tHit * rayShadow.tHit + cEpsilon < lightDistanceSq)
 			{
@@ -433,7 +432,7 @@ Vec3 RayEngine::handleRefraction(const Material* material, Ray& ray0, float Ndot
   return color;
 }
 
-Vec3 RayEngine::twoTonePaint(Vec3& p, Vec3& N, Vec3& V)
+Vec3 RayEngine::multiTonePaint(Vec3& p, Vec3& N, Vec3& V)
 {
   Vec3 color;
   /*

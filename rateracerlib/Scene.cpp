@@ -465,7 +465,7 @@ void Scene::InitScene()
   printf("numshapes: %d\n", mNumShapes);
 
   // BVH code below ///////////////////////////////////////////////////////
-
+return;
   typedef Shape* ShapePtr;
   Shape** shapes = new ShapePtr[mNumShapes];
 
@@ -490,6 +490,11 @@ void Scene::DestroyScene()
 	{
 		delete mShapes[n];
 	}
+}
+
+Material* Scene::getModelMaterial(int modelIdx, const char *materialName)
+{
+  return mModels[modelIdx]->mMaterialMap[materialName];
 }
 
 void Scene::calcSceneBoundingBox(Vec3& min, Vec3& max)

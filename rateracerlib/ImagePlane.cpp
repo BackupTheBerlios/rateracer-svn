@@ -679,12 +679,13 @@ void ImagePlane::updateBitmapPixels()
 {
 	if (mPixels == NULL) return;
 	int idx = 0;
+  // FIXME check rendering y order?
 	for(int y = mRenderHeight-1; y >= 0; y--) {
 		for(int x = 0; x < mRenderWidth; x++) {
 			byte r = byte(255.0f * min2(mPixels[idx][0], 1.0f));
 			byte g = byte(255.0f * min2(mPixels[idx][1], 1.0f));
 			byte b = byte(255.0f * min2(mPixels[idx][2], 1.0f));
-      byte alpha = (b > 250) ? 0 : 255; // 0xFF000000
+      byte alpha = 255;//(b > 250) ? 0 : 255; // 0xFF000000
 			mBitmapPixels[x + y*mRenderWidth] =
         (alpha << 24) + (r << 16) + (g << 8) + b;
 			idx++;

@@ -14,8 +14,13 @@
 #include "rateracerlib/RayEngine.h"
 #include "rateracerlib/ImagePlane.h"
 
+#include "rateracerlib/Texture.h"
+
 using namespace System;
 using namespace Gweronimo;
+
+//using namespace System::Drawing;
+using namespace System::Drawing::Imaging;
 
 namespace RateRacerCore
 {
@@ -49,6 +54,43 @@ namespace RateRacerCore
 			mRenderProps->mRayEngine  = mRayEngine;
 			mRenderProps->mImagePlane = mImagePlane;
       mRenderProps->mScene      = mScene;
+
+/*
+      // Create a Bitmap object from a BMP file.
+      Gdiplus::Bitmap bitmap(L"models/textures/Earth.bmp");
+      // Display the bitmap before locking and altering it.
+      //graphics.DrawImage(&bitmap, 10, 10);
+
+      Gdiplus::BitmapData bitmapData;
+//      bitmapData.Width  = width;
+//      bitmapData.Height = height;
+//      bitmapData.Stride = 4*bitmapData.Width;
+//      bitmapData.PixelFormat = PixelFormat32bppARGB; 
+//      bitmapData.Scan0 = (VOID*)pixels;
+//      bitmapData.Reserved = NULL;
+      Rect rect(0, 0, bitmap.Width, bitmap.Height);
+      bitmap.LockBits(
+        &rect,
+        ImageLockModeRead,
+        PixelFormat32bppARGB,
+        &bitmapData);
+*/
+      Bitmap *bmp = new Bitmap(L"models/textures/Earth.bmp");
+      BitmapData* bmpData = bmp->LockBits(
+        System::Drawing::Rectangle(0,0,bmp->Width, bmp->Height),
+        //System::Drawing::Rectangle(10,10, 1,1),
+        ImageLockMode::ReadOnly,
+        //ImageLockMode::ReadWrite,
+        PixelFormat::Format32bppArgb);
+
+      Texture *tex = new Texture();
+      mScene->getModelMaterial(0, "lambert1")->mTexture = tex;
+      //mScene->mModels[0]->mMaterialMap["lambert1"]->mTexture
+      tex->createFromBitmapPixels(
+        bmpData->Width, bmpData->Height, (UINT*)bmpData->Scan0.ToPointer());
+
+      bmp->UnlockBits(bmpData);
+//      bitmap.UnlockBits(&bitmapData);
 		}
 
 		static void finish()

@@ -242,6 +242,9 @@
 			RelativePath=".\Stratification.h">
 		</File>
 		<File
+			RelativePath=".\Texture.h">
+		</File>
+		<File
 			RelativePath=".\TODO.txt">
 		</File>
 	</Files>

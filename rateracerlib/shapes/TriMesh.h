@@ -54,7 +54,7 @@ public:
 		mUVs.resize(pMesh->numUVs);
 		for (n = 0; n < pMesh->numUVs; n++) {
 			mUVs[n][0] = pMesh->uvs[2*n+0];
-			mUVs[n][0] = pMesh->uvs[2*n+1];
+			mUVs[n][1] = pMesh->uvs[2*n+1];
 		}
 
 		int vi[3], ni[3], uvi[3];

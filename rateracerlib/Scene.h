@@ -25,6 +25,8 @@ public:
 	void InitScene();
 	void DestroyScene();
 
+  Material* getModelMaterial(int modelIdx, const char *materialName);
+
 	void drawScenePreview();
 	void dbgDrawGrid();
 
