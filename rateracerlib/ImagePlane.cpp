@@ -35,6 +35,7 @@ ImagePlane::ImagePlane()
 
 	mPixels = NULL;
 	mFatPixels = NULL;
+	mBitmapPixels = NULL;
 
 	setRandomSeed();
 

@@ -15,9 +15,6 @@ namespace RateRacerGUI
 	/// </summary>
 	public class MainForm : System.Windows.Forms.Form
 	{
-    //private Gweronimo.BmpControl bmpControl1;
-    //private Gweronimo.GLPreviewControl glPreviewControl1;
-
     private Gweronimo.BmpControl bmpControl1;
     private Gweronimo.GLPreviewControl glPreviewControl1;
     private System.Windows.Forms.Panel panel1;
