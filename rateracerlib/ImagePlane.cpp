@@ -29,7 +29,7 @@ ImagePlane::ImagePlane()
 	mRelativeAperture = 0;//0.10f;
 	mFocusDistance = 2.0f;
 
-	mNumDOFSamples = 25;//160;
+	mNumDOFSamples = 1;//25;//160;
 
 	mPixels = NULL;
 	mFatPixels = NULL;
@@ -186,7 +186,7 @@ void ImagePlane::TraceScene()
 	float halfPixelSize = 0.5f * pixelSize;
 
 	mFocusDistance = distance(mCamControl->mEyePos, mCamControl->mLookAt); // Cheating!!!
-	float aaDiameter = pixelSize * mFocusDistance;
+	float aaDiameter = 0;//pixelSize * mFocusDistance;
 	float dofWeight = 1.0f / float(mNumDOFSamples + 1); // includes initial centered ray...
 	//float dofWeight = 1.0f;
 	float xRnd, yRnd;

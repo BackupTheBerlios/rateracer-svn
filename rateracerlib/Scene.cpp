@@ -119,8 +119,9 @@ void Scene::InitScene()
 	mShapes.push_back(obj);
 */
 
-// Load some mesh object
+// Load some mesh objects
 
+#if 1
 	obj = new Model("models/test.chunks");
   setRandomSeed();
   Model *model = (Model*)obj;
@@ -132,6 +133,8 @@ void Scene::InitScene()
     //  m->first.c_str(), m->second->diffColor[0], m->second->diffColor[1], m->second->diffColor[2]);
   }
 	mShapes.push_back(obj);
+#endif
+
 #if 0
 	//obj = new Model("models/plant.gw");
 	//((Model*)obj)->mMaterials[0]->diffColor.assign(0.0f,0.8f,0.0f);

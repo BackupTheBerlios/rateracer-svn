@@ -86,6 +86,13 @@ namespace Gweronimo
 		if (m.Msg == WM_USER_POSTPROC_DONE) {
 			updateBitmap();
 			PostProcessingDone(this, EventArgs::Empty);
+      /*
+			GdiPlusBitmap::saveGdiPlusBitmap(
+        L"images/testsave.png",
+				RateRacerEngine::mImagePlane->mRenderWidth,
+				RateRacerEngine::mImagePlane->mRenderHeight,
+				RateRacerEngine::mImagePlane->mBitmapPixels);
+      */
 		}
 	}
 

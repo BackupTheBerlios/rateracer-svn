@@ -151,6 +151,37 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 	// Debug: Early return (no shading)!
 	//return matColor;
 
+  /*
+  Two-tone paint:
+  N = Normal
+  Nn = Hi Freq Normalized Vector Noise
+  Ns = (a*Nn + b*N).normalize() // a << b
+  Nss = (c*Nn + d*N).normalize() // c = d
+  Ctwo_tone = c0*dot(Ns,V) + c1*dot(Ns,V)^2 + c2*dot(Ns,V)^4
+  Cmicroflakes = c3*dot(Nss,V)^16
+  */
+  Vec3 Nn = Vec3(rnd0(),rnd0(),rnd0()).normalize();
+  Vec3 perturbN1 = (N + 0.03f*Nn).normalize();
+  Vec3 perturbN2 = (N + 0.05f*Nn).normalize();
+  float base1 = dot(perturbN1,V);
+  float base2 = dot(perturbN2,V);
+  /*
+  Vec3 colorBeg(1.0f,0.0f,0.0f);
+  Vec3 colorMid(-1.0f,0,0);
+  Vec3 colorEnd(0,1.0f,0);
+  Vec3 colorSparkles(0.1f,0.1f,0.1f);
+  */
+  // These are the exact colors used in ATI's car demo...
+  Vec3 colorBeg(0.4f,0.0f,0.35f);
+  Vec3 colorMid(0.6f,0.0f,0.0f);
+  Vec3 colorEnd(0.0f,0.35f,-0.35f);
+  Vec3 colorSparkles(0.5f,0.5f,0.0f);
+  //
+  matColor = colorBeg * base1 +
+             colorMid * powf(base1,2) +
+             colorEnd * powf(base1,4);
+  matColor += colorSparkles * powf(base2,16);
+
 	if (material->refract > 0)
 	{
 		bool doRefraction = true;
@@ -202,6 +233,15 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 				}
 
 				Vec3 colorRefr = TraceRay(rayRefr, level+1);
+
+        /*Beer's Law:
+        if (hitInsideOfObject)
+        {
+          const float beerFactor[3] = { 0.25f, 0.5f, 1.0f };
+          colorRefr[0] *= expf(logf(beerFactor[0]) * ray0.tHit);
+          colorRefr[1] *= expf(logf(beerFactor[1]) * ray0.tHit);
+          colorRefr[2] *= expf(logf(beerFactor[2]) * ray0.tHit);
+        }*/
 				/*
 				if (ray0.isTransmitting)
 				{
