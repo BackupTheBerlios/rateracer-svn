@@ -1,11 +1,14 @@
 MayaExporter (chunksExport) TODO list
 -------------------------------------
 
-- Use environment variable for path to Maya in project settings!
+[X] Use environment variable for path to Maya in project settings!
+[ ] export mesh transform (fnMesh.transformationMatrix() ?)
+[ ] make error handling more robust, remove debug print stuff
+[X] implement cameras in XML
 
-- export mesh transform (fnMesh.transformationMatrix() ?)
-- make error handling more robust, remove debug print stuff
+[X] export point lights
+[X] export spherical lights
+[ ] export area lights
+[ ] export spot lights
 
-- implement cameras in XML
-- implement lights in XML
 
