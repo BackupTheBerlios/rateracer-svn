@@ -39,6 +39,7 @@
 #include <maya/MFnPointLight.h>
 
 #include <string>
+#include <math.h>
 
 //#include "mathlib/gm/gm.h"
 #include "chunks/chunksfile.h"
@@ -500,31 +501,84 @@ void chunksExport::exportCameras(FILE* outfile, bool exportAll)
     cameraId++;
 
   } // while
-
-
-	
-	
 }
 
-void chunksExport::exportLights(FILE* outfile, bool exportAll)
-{
-	MDagPath currentPath;
 
-	MItDag lampIterator(MItDag::kDepthFirst, MFn::kLight);
+void chunksExport::exportPointlights( FILE* outfile ) {  
 
-	for( ; !lampIterator.isDone(); lampIterator.next() )
-	{
-		lampIterator.getPath( currentPath ); 
-		currentPath.extendToShape();
+	printf("\nExporting point lights...\n");
 
-		//if (currentPath.node().hasFn(MFn::kPointLight))
-		{
-			//MFnPointLight fnPointLight(currentPath);
-			MFnLight fnLight(currentPath);
-			printf("\nFound light: %s\n", fnLight.name().asChar() );
-		}
+  MStatus status;
+  MSpace::Space space = MSpace::kWorld;
+  /*
+   * Iterate over all point lights
+   */
+  MItDag iter( MItDag::TraversalType::kBreadthFirst, MFn::kPointLight, &status );
+  while( !iter.isDone() ) {
+    MStatus status;
+    MDagPath path;
+    status = iter.getPath(path);
+    MFnPointLight point_light(path);
+    /*
+     * Get transform and data
+     */
+    MObject transform_object = path.transform( &status );
+    MFnTransform light_transform_temp( transform_object, &status );
+    MDagPath transform_path;
+    status = light_transform_temp.getPath( transform_path );
+    MFnTransform light_transform( transform_path, &status );
 
-		/*
+    MColor color = point_light.color( &status );
+    float intensity = point_light.intensity( &status );
+    MVector translation = light_transform.translation( MSpace::kWorld, &status );
+    MString name = point_light.name( );
+    short decay = point_light.decayRate( );
+    /*
+     * If we use ray traced shadows we can also set the number of
+     * samples and a radius, i.e. a spherical light
+     */
+    bool useRayTraceShadows = point_light.useRayTraceShadows( );
+    short numShadowSamples  = point_light.numShadowSamples( );
+    float radius            = point_light.shadowRadius( );
+    // Dont know what this one's for
+    short rayDepthLimit     = point_light.rayDepthLimit( );
+    
+    /*
+     *  <lightsource id="" type="omni/spot/spherical/directional/area/...">
+     *    <position x="1.0" y="1.0" z="1.0" />
+     *    <direction x="1.0" y="1.0" z="1.0" />
+     *    <radius value="1.0" />
+     *    <samples u="1" v="1" />
+     *    <color r="1.0" g="1.0" b="1.0" />
+     *    <intensity value="1.0" />
+     *  </lightsource>
+     *
+     *  TODO: Add decay parameter, in Maya you can choose <none, linear, quadratic, cubic>
+     */
+    if( useRayTraceShadows ) {
+      fprintf( outfile, "<lightsource id='%s' type='spherical'>\n", name.asChar( ) );
+    } else {
+      fprintf( outfile, "<lightsource id='%s' type='omni'>\n", name.asChar( ) );
+    }
+    fprintf( outfile, "  <position x='%.3f' y='%.3f' z='%.3f' />\n", translation.x, translation.y, translation.z );
+    fprintf( outfile, "  <color r='%.3f' g='%.3f' b='%.3f' />\n", color.r, color.g, color.b );
+    fprintf( outfile, "  <intensity value='%.3f' />\n", intensity );
+
+    if( useRayTraceShadows ) {
+      fprintf( outfile, "  <samples u='%d' v='%d' />\n", (int)sqrtf( numShadowSamples ), (int)sqrtf( numShadowSamples ) );
+      fprintf( outfile, "  <radius value='%.3f' />\n", radius );
+    }    
+    fprintf( outfile, "</lightsource>\n" );
+
+    iter.next();
+  } // while
+}
+
+
+
+/*
+  Light hierarchy
+  
 		MFnLight
 			MFnNonAmbientLight 
 				MFnNonExtendedLight 
@@ -533,8 +587,14 @@ void chunksExport::exportLights(FILE* outfile, bool exportAll)
 					MFnDirectionalLight 
 				MFnAreaLight 
 			MFnAmbientLight
-		*/
-	}
+*/
+
+void chunksExport::exportLights(FILE* outfile, bool exportAll)
+{
+  exportPointlights( outfile );
+  // Not yet implemented
+  //exportSpotlights( outfile );
+  //exportArealights( outfile );
 }
 
 void chunksExport::exportMaterials(FILE* outfile, bool exportAll)

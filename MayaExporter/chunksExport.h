@@ -53,6 +53,9 @@ private:
 	void exportLights(		FILE* outfile, bool exportAll);
 	void exportMaterials(	FILE* outfile, bool exportAll);
 
+  void exportPointlights( FILE* outfile );
+
+
 	void dumpLambertParameters(FILE* outfile, const MObject& shader);
 	void dumpReflectParameters(FILE* outfile, const MObject& shader);
 	void dumpPhongParameters(  FILE* outfile, const MObject& shader);

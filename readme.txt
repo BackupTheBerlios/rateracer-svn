@@ -8,3 +8,5 @@ RateRacer project log
 - FD successfully checked everything out, and commited for the first time :-)
 - Tested SubVersion conflict handling.
 - Added camera export 
+- Added light sources (point light and spherical light)
+- Added untested code for extracting texture nodes
