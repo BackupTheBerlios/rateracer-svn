@@ -469,12 +469,9 @@ void Scene::InitScene()
   typedef Shape* ShapePtr;
   Shape** shapes = new ShapePtr[mNumShapes];
 
-  printf("copying: %d\n", mNumShapes);
   for (int n = 0; n < mNumShapes; n++)
     shapes[n] = mShapes[n];
   mShapes.clear();
-
-  printf("numshapes: %d\n", mNumShapes);
 
   mShapes.push_back(BVH::buildBVH(shapes, mNumShapes, 0) );
 	mNumShapes = (int)mShapes.size();
@@ -548,7 +545,7 @@ void Scene::drawScenePreview()
 	}
 
 	for (int i = 0; i < mNumShapes; i++) {
-		mShapes[i]->drawBoundingBoxes();
+		//mShapes[i]->drawBoundingBoxes();
 	}
 
 	for (int i = 0; i < mNumShapes; i++) {

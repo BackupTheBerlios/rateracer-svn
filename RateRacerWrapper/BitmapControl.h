@@ -45,6 +45,9 @@ namespace Gweronimo
 		void OnHandleCreated(EventArgs* e);
 		void OnHandleDestroyed(EventArgs* e);
 
+		void OnMouseEnter(EventArgs* e);
+		void OnMouseLeave(EventArgs* e);
+
 		void OnNotifyMessage(Message m);
 
 		void OnPaintBackground(PaintEventArgs* e);

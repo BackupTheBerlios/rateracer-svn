@@ -40,9 +40,7 @@ namespace Gweronimo
 
 	void GLPreviewControl::OnMouseEnter(EventArgs* e)
 	{
-		Enabled = true;
 		Focus();
-
 		OpenGLControl::OnMouseEnter(e);
 	}
 
@@ -53,24 +51,17 @@ namespace Gweronimo
 
 	void GLPreviewControl::OnMouseDown(MouseEventArgs* e)
 	{
-		while (ShowCursor(FALSE) >= 0);
-		//SetCapture( (HWND)this->Handle.ToPointer() );
-		Capture = true;
-		ShowCursor(FALSE);
-		//GetCursorPos(&mMousePos);
-		mMousePos = MousePosition;
-		SetCursorPos(320, 240);
-
+    Cursor::Hide();
+    mMousePos = Cursor::Position;
+		//Capture = true;
 		OpenGLControl::OnMouseDown(e);
 	}
 
 	void GLPreviewControl::OnMouseUp(MouseEventArgs* e)
 	{
-		SetCursorPos(mMousePos.X, mMousePos.Y);
-		//ReleaseCapture();
-		Capture = false;
-		while (ShowCursor(TRUE) < 0);
-
+    Cursor::Position = mMousePos;
+    Cursor::Show();
+		//Capture = false;
 		OpenGLControl::OnMouseUp(e);
 	}
 
@@ -89,32 +80,24 @@ namespace Gweronimo
 
 	void GLPreviewControl::OnMouseMove(MouseEventArgs* e)
 	{
-		static POINTS oldp = {320, 240};
-		static POINT newp;
-
-		if (Capture)
+    if (Capture)
 		{
-			GetCursorPos(&newp);
-			SetCursorPos(320, 240);
-
-			int dx = newp.x - oldp.x;
-			int dy = newp.y - oldp.y;
+  		Point newp = Cursor::Position;
+      Cursor::Position = mMousePos;
+      Point delta = newp - mMousePos;
 
 			if (e->Button & MouseButtons::Left) {
-				RateRacerEngine::mCamControl->moveInOut(0.1f * dy);
+				RateRacerEngine::mCamControl->moveInOut(0.1f * delta.Y);
 			}
 			else if (e->Button & MouseButtons::Middle) {
-				RateRacerEngine::mCamControl->translate(0.1f * dx, -0.1f * dy);
+				RateRacerEngine::mCamControl->translate(0.1f * delta.X, -0.1f * delta.Y);
 			}
 			else if (e->Button & MouseButtons::Right) {
-				RateRacerEngine::mCamControl->rotate(-0.1f * dx, -0.1f * dy);
+				RateRacerEngine::mCamControl->rotate(-0.1f * delta.X, -0.1f * delta.Y);
 			}
 
-			//Invalidate();
-			//Update();
 			Refresh();
 		}
-
 		OpenGLControl::OnMouseMove(e);
 	}
 

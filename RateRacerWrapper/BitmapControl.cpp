@@ -81,10 +81,22 @@ namespace Gweronimo
 		Control::OnHandleDestroyed(e);
 	}
 
+	void BmpControl::OnMouseEnter(EventArgs* e)
+	{
+		Focus();
+		Control::OnMouseEnter(e);
+	}
+
+	void BmpControl::OnMouseLeave(EventArgs* e)
+	{
+		Control::OnMouseLeave(e);
+	}
+
 	void BmpControl::OnNotifyMessage(Message m)
 	{
 		if (m.Msg == WM_USER_POSTPROC_DONE) {
-			updateBitmap();
+			//updateBitmap();
+      //Refresh();
 			PostProcessingDone(this, EventArgs::Empty);
       /*
 			GdiPlusBitmap::saveGdiPlusBitmap(
@@ -159,7 +171,7 @@ namespace Gweronimo
 	void BmpControl::updateBitmap()
 	{
 		RateRacerEngine::mImagePlane->updateBitmapPixels();
-		this->Invalidate(false);
+		//this->Invalidate(false);
 	}
 
 	int BmpControl::renderingPercentage()
@@ -208,6 +220,8 @@ namespace Gweronimo
 			//Ellipse(realHDC, 0,0, Width-1, Height-1);
 			//::StretchDIBits(realHDC, 0,0, Width, Height,
 			//								0,0, 100,100, mPixels, mBMI, DIB_RGB_COLORS, SRCCOPY);
+
+      //Console::WriteLine(e->Graphics->ClipBounds.ToString());
 
 			GdiPlusBitmap::displayGdiPlusBitmap(
 				realHDC, mZoom, mInterpolate,

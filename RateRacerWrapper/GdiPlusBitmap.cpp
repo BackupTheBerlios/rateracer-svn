@@ -4,6 +4,8 @@
 using namespace Gdiplus;
 #pragma comment(lib, "gdiplus")
 
+#include <stdio.h>
+
 void GdiPlusBitmap::displayGdiPlusBitmap( HDC hdc, float zoom, bool smooth,
 																				  int width, int height, UINT* pixels )
 {
@@ -41,9 +43,29 @@ void GdiPlusBitmap::displayGdiPlusBitmap( HDC hdc, float zoom, bool smooth,
 	else
 		graphics.SetInterpolationMode(InterpolationModeNearestNeighbor); 
 
-	int imgWidth  = (int)(zoom * (float)width)  + (int)zoom - 1;
-	int imgHeight = (int)(zoom * (float)height) + (int)zoom - 1;
-	graphics.DrawImage(&bitmap, 0, 0, imgWidth, imgHeight);
+  int x = 0;
+  int y = 0;
+	int imgWidth  = (int)(zoom * (float)width);
+	int imgHeight = (int)(zoom * (float)height);
+
+  // Compensate for DrawImage() scaling imperfection...
+  if (zoom > 1.0f) {
+    imgWidth  += (int)(0.5f*zoom);
+    imgHeight += (int)(0.5f*zoom);
+  }
+
+  /*
+  RectF boundRect; graphics.GetVisibleClipBounds(&boundRect);
+  printf("%f x %f\n", boundRect.Width, boundRect.Height);
+  if (boundRect.Width  > imgWidth)  x = (boundRect.Width  - imgWidth) / 2;
+  if (boundRect.Height > imgHeight) y = (boundRect.Height - imgHeight) / 2;
+  */
+
+	graphics.DrawImage(&bitmap, x, y, imgWidth, imgHeight);
+
+  //Rect destRect;
+  //int srcX,srcY,srcW,srcH;
+  //graphics.DrawImage(&bitmap, destRect, srcX,srcY,srcW,srcH, UnitPixel);
 }
 
 int GetEncoderClsid(const WCHAR* format, CLSID* pClsid)
@@ -54,12 +76,10 @@ int GetEncoderClsid(const WCHAR* format, CLSID* pClsid)
    ImageCodecInfo* pImageCodecInfo = NULL;
 
    GetImageEncodersSize(&num, &size);
-   if(size == 0)
-      return -1;  // Failure
+   if(size == 0) return -1; // Failure
 
    pImageCodecInfo = (ImageCodecInfo*)(malloc(size));
-   if(pImageCodecInfo == NULL)
-      return -1;  // Failure
+   if(pImageCodecInfo == NULL) return -1; // Failure
 
    GetImageEncoders(num, size, pImageCodecInfo);
 
@@ -84,6 +104,8 @@ void GdiPlusBitmap::saveGdiPlusBitmap(const WCHAR* filename,
                 PixelFormat32bppARGB, (BYTE*)pixels);
 
   CLSID pngClsid;
-  GetEncoderClsid(L"image/png", &pngClsid);
-  bitmap.Save(filename, &pngClsid, NULL);
+  if (GetEncoderClsid(L"image/png", &pngClsid) != -1)
+  {
+    bitmap.Save(filename, &pngClsid, NULL);
+  }
 }

@@ -522,8 +522,10 @@ void ImagePlane::prepareImage(int width, int height)
 	delete [] mBitmapPixels;
 	mBitmapPixels = new UINT[mRenderWidth * mRenderHeight];
 
-	//for (mTexWidth  = 1; mTexWidth  < mRenderWidth;  mTexWidth  *= 2);
-	//for (mTexHeight = 1; mTexHeight < mRenderHeight; mTexHeight *= 2);
+	for (int n = 0; n < mRenderHeight * mRenderWidth; n++) {
+		mPixels[n].setZero();
+		mBitmapPixels[n] = 0xFF000000;
+	}
 
 	mCritSecPixels.unlock();
 }

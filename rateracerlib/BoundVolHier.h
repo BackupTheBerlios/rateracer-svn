@@ -174,18 +174,8 @@ public:
 
 	void drawPreview()
 	{
-    /*
-		if (mTotalNumTris > 500000) {
-			for (int n = 0; n < (int)mMeshes.size(); n++) {
-				mMeshes[n]->drawBoundingBoxes();
-			}
-		}
-		else {
-			for (int n = 0; n < (int)mMeshes.size(); n++) {
-				mMeshes[n]->drawPreview();
-			}
-		}
-    */
+    left->drawPreview();
+    right->drawPreview();
 	}
 
 	Shape *lastHit;

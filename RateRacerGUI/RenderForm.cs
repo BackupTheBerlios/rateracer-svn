@@ -6,6 +6,48 @@ using System.Windows.Forms;
 
 using RateRacerCore;
 
+    /*
+    void startRenderInSeparateWindow()
+    {
+      if (showRenderWindow()) 
+      {
+        mRenderForm.startRendering( mRenderSize );
+      }
+    }
+
+    bool showRenderWindow()
+    {
+      //Console.WriteLine("startRender: " + System.Threading.Thread.CurrentThread.GetHashCode());
+      if (mRenderForm == null) 
+      {
+        mRenderForm = new RenderForm(mRenderSize);
+
+        MethodInvoker mi = new MethodInvoker(createRenderWindowThread);
+        mi.BeginInvoke(null, null);
+
+        //mRenderForm.startRendering();
+
+        return false;
+      }
+      return true;
+    }
+
+    void createRenderWindowThread()
+    {
+      //Console.WriteLine("create: " + System.Threading.Thread.CurrentThread.GetHashCode());
+      mRenderForm.Closed += new System.EventHandler(this.RenderForm_Closed);
+      mRenderForm.Show();
+
+      Application.Run();
+    }
+
+    private void RenderForm_Closed(object sender, System.EventArgs e)
+    {
+      //Console.WriteLine("Closed: " + System.Threading.Thread.CurrentThread.GetHashCode());
+      mRenderForm = null;
+    }
+    */
+
 namespace RateRacerGUI
 {
 	/// <summary>

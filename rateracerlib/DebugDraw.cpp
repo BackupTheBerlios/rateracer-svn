@@ -87,7 +87,7 @@ void drawAAWireBox(float xside, float yside, float zside, const Vec3& origin)
 	glDisable(GL_TEXTURE_2D);
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
-	glLineWidth(2.0f);
+	glLineWidth(1.0f);
 	
 	glBegin(GL_LINE_STRIP);
 		glVertex3f(origin[0],				origin[1],			 origin[2]);

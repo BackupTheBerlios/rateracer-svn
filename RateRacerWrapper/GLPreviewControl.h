@@ -55,7 +55,6 @@ namespace Gweronimo
 		void PaintGL();
 
 	protected:
-		// TODO: do not move mousepos away, use current!
 		Point mMousePos;
 
 		//CameraControl* mCamControl;
