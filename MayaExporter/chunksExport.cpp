@@ -4,6 +4,7 @@
 #define REQUIRE_IOSTREAM
 
 #include <vector>
+#include <map>
 
 #define NT_ENV
 #define NT_PLUGIN
@@ -16,6 +17,7 @@
 #include <maya/MFnMesh.h>
 #include <maya/MItDependencyGraph.h>
 #include <maya/MItDependencyNodes.h>
+#include <maya/MPointArray.h>
 #include <maya/MFnNurbsSurface.h>
 #include <maya/MFnNurbsCurve.h>
 #include <maya/MFnComponent.h>
@@ -214,20 +216,14 @@ void chunksExport::exportMeshes(const char *fullpath, bool exportSelectedOnly)
 		if (exportSelectedOnly && !isNodeInSelection(currentPath, selectionList))
 			continue;
 
-		int nontriangulated = 0;
-		//int n;
-
 		MStatus stat;
 		MFnMesh fnMesh( currentPath, &stat );
 		if( stat != MS::kSuccess )
 		{
 			printf("*** Error - failed to get mesh function set in buildMesh().\n");
-			return;
+			continue;
 		}
 
-		MFnDagNode fnDagNode(currentPath);
-
-		//FIXME clone & triangulate!
 		//FIXME export mesh transform (fnMesh.transformationMatrix() ?)
 
 		/////////////////////////////////////////////////////////////////////////////
@@ -254,7 +250,7 @@ void chunksExport::exportMeshes(const char *fullpath, bool exportSelectedOnly)
 				// Default shader has empty component list
 				if (MFnComponent(faceGroups[i]).elementCount() == 0) {
 					numGroups--;
-					printf("\nDefault shader skipped!\n");
+					//printf("\nDefault shader skipped!\n");
 				}
 			}
 		}
@@ -265,11 +261,11 @@ void chunksExport::exportMeshes(const char *fullpath, bool exportSelectedOnly)
 		}
 
 		printf("\nMesh object: %s\n", fnMesh.name().asChar());
-		printf("%d faces in %d groups\n", fnMesh.numPolygons(), numGroups);
 		printf("Vertices: %d\n", fnMesh.numVertices());
 		//printf("Colors:   %d\n", fnMesh.num());
 		printf("Normals:  %d\n", fnMesh.numNormals());
 		printf("UVs:      %d\n", fnMesh.numUVs());
+		printf("%d groups with a total of %d polygons:\n", numGroups, fnMesh.numPolygons());
 
 		MSpace::Space coordSpace = MSpace::kWorld;
 
@@ -278,7 +274,9 @@ void chunksExport::exportMeshes(const char *fullpath, bool exportSelectedOnly)
 		fnMesh.getNormals( normalArray, coordSpace );
 		fnMesh.getUVs( texUArray, texVArray );
 
-		int n, g, uvIdx;
+		int n, g, triangle_count, uvIdx;
+		std::map< int, int > lookup_map;
+		int nontriangulated = 0;
 
 		int numVertices = fnMesh.numVertices();
 		int numNormals = fnMesh.numNormals();
@@ -313,6 +311,7 @@ void chunksExport::exportMeshes(const char *fullpath, bool exportSelectedOnly)
 		for (g = 0; g < numGroups; g++)
 		{
 			// Skip default shader connection if multiple shaders exist
+			// FIXME cleanup this messy handling!
 			if (shaderSets.length() > 1 &&
 					MFnComponent(faceGroups[g]).elementCount() == 0)
 			{
@@ -324,36 +323,88 @@ void chunksExport::exportMeshes(const char *fullpath, bool exportSelectedOnly)
 
 			MItMeshPolygon faceIter( currentPath, faceGroups[g] );
 
-			MeshGroup* newGroup = new MeshGroup(
-				nodeName(shader).asChar(),
-				faceIter.count() );
-
-			int index = 0;
+			int numTris = 0;
+			int numPolys = 0;
+			int maxNumTrisPerPolygon = 0;
 			for( ; !faceIter.isDone(); faceIter.next() )
 			{
-				int idxCount = faceIter.polygonVertexCount();
-				
-				if (idxCount > 3)
-				{
-					nontriangulated++;
-					idxCount = 3;
-				}
-				
-				for (int v = 0; v < idxCount; v++)
-				{
-					newGroup->vertexIndices[index] = faceIter.vertexIndex(v);
-					newGroup->normalIndices[index] = faceIter.normalIndex(v);
-
-					uvIdx = 0;
-					faceIter.getUVIndex(v, uvIdx);
-					newGroup->uvIndices[index] = uvIdx;
-
-					index++;
+				if (!faceIter.hasValidTriangulation()) {
+					continue;
 				}
 
-				totalNumTriangles++;
+				triangle_count = 0;
+				/*status =*/ faceIter.numTriangles(triangle_count);
+				if (triangle_count == 0) {
+					continue;
+				}
+
+				if (maxNumTrisPerPolygon < triangle_count )
+					maxNumTrisPerPolygon = triangle_count;
+
+				numTris += triangle_count;
+				numPolys++;
 			}
+			totalNumTriangles += numTris;
 
+			printf("Group %d: %d triangles in %d polygons (max. %d tris per poly).\n",
+				g, numTris, numPolys, maxNumTrisPerPolygon);
+
+			MeshGroup* newGroup = new MeshGroup( nodeName(shader).asChar(), numTris );
+
+			int index = 0;
+			for( faceIter.reset(); !faceIter.isDone(); faceIter.next() )
+			{
+				if (!faceIter.hasValidTriangulation()) {
+					//printf("* Warning: Skipping polygon %i since it has no valid triangulation.\n", faceIter.index());
+					nontriangulated++;
+					continue;
+				}
+
+				triangle_count = 0;
+				/*status =*/ faceIter.numTriangles(triangle_count);
+				if (triangle_count == 0) {
+					printf("* Warning: Polygon %i contains no triangles.\n", faceIter.index());
+					continue;
+				}
+
+				//bool has_uvs = faceIter.hasUVs();
+
+				// Mapping of mesh-relative vertex indices to polygon-relative indices
+				lookup_map.clear();
+				int idxCount = faceIter.polygonVertexCount();
+				for (int i = 0; i < idxCount; i++) {
+					lookup_map[faceIter.vertexIndex(i)] = i;
+				}
+
+				// for every triangle in this polygon...
+				for (int t = 0; t < triangle_count; t++)
+				{
+					MPointArray triangle_points;
+					MIntArray triangle_vertex_list;
+					faceIter.getTriangle(t, triangle_points, triangle_vertex_list, MSpace::kObject);
+
+					if (triangle_vertex_list.length() != 3) {
+						printf("* Error: Triangle %i in polygon %i has %d indices!\n",
+							t, faceIter.index(), triangle_vertex_list.length());
+					}
+
+					for (int v = 0; v < 3; v++)
+					{
+						newGroup->vertexIndices[index] = triangle_vertex_list[v];
+
+						int localIdx = lookup_map[ triangle_vertex_list[v] ];
+
+						//newGroup->vertexIndices[index] = faceIter.vertexIndex(localIdx);
+						newGroup->normalIndices[index] = faceIter.normalIndex(localIdx);
+
+						uvIdx = 0;
+						faceIter.getUVIndex(localIdx, uvIdx);
+						newGroup->uvIndices[index] = uvIdx;
+
+						index++;
+					}
+				}
+			}
 			meshgroupsVector.push_back( newGroup );
 		}
 		
@@ -362,21 +413,21 @@ void chunksExport::exportMeshes(const char *fullpath, bool exportSelectedOnly)
 			newMesh->meshGroups[n] = meshgroupsVector[n];
 		}
 		
-		if (nontriangulated > 0)
-		{
-			printf(" *** Warning: Mesh has %d non-triangulated face(s)! ***\n",
-				nontriangulated);
-		}
-		
-		//if (mesh->vCount == 0) printf("*** Warning - mesh has no vertices!\n");
-		
+		MFnDagNode fnDagNode(currentPath);
+
 		bool doubleSided = false;
 		fnDagNode.findPlug( "doubleSided" ).getValue(doubleSided);
-		if (doubleSided) printf("*** Warning - mesh is double-sided!\n");
+		if (doubleSided) printf("* Warning: mesh is double-sided!\n");
 		
 		//bool opposite = false;
 		//fnDagNode.findPlug( "opposite" ).getValue(opposite);
 
+		if (nontriangulated > 0)
+		{
+			printf("* Warning: Mesh has %d polygon(s) where no valid triangulation exists!\n",
+				nontriangulated);
+		}
+		
 		chunksVector.push_back( 
 			new ChunkHeader(CHUNKTYPE_MESH, fnMesh.name().asChar(), newMesh) );
 	}
@@ -675,7 +726,7 @@ void chunksExport::exportMaterials(FILE* outfile, bool exportAll)
 		}
 		else
 		{
-			printf("WARNING: Unrecognized material type on node '%s'!\n", shadername.asChar());
+			printf("* Warning: Unrecognized material type on node '%s'!\n", shadername.asChar());
 		}
 	}
 }
