@@ -121,6 +121,16 @@
                     RelPath = "RateRacerBW.ico"
                     BuildAction = "Content"
                 />
+                <File
+                    RelPath = "RenderForm.cs"
+                    SubType = "Form"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "RenderForm.resx"
+                    DependentUpon = "RenderForm.cs"
+                    BuildAction = "EmbeddedResource"
+                />
             </Include>
         </Files>
     </CSHARP>

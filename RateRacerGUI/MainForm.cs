@@ -15,11 +15,14 @@ namespace RateRacerGUI
 	/// </summary>
 	public class MainForm : System.Windows.Forms.Form
 	{
-    private Gweronimo.BmpControl bmpControl1;
+    private RenderForm mRenderForm;
+
     private Gweronimo.GLPreviewControl glPreviewControl1;
     private System.Windows.Forms.Panel panel1;
-    private System.Windows.Forms.Panel panel2;
-    private System.Windows.Forms.Button button1;
+    private System.Windows.Forms.MainMenu mainMenu1;
+    private System.Windows.Forms.MenuItem menuItem1;
+    private System.Windows.Forms.MenuItem menuItem2;
+    private System.Windows.Forms.MenuItem miRender;
 		/// <summary>
 		/// Required designer variable.
 		/// </summary>
@@ -36,17 +39,7 @@ namespace RateRacerGUI
 			// TODO: Add any constructor code after InitializeComponent call
 			//
 
-      this.bmpControl1 = new Gweronimo.BmpControl();
       this.glPreviewControl1 = new Gweronimo.GLPreviewControl();
-      // 
-      // bmpControl1
-      // 
-      this.bmpControl1.Name = "bmpControl1";
-      this.bmpControl1.Text = "bmpControl1";
-      this.bmpControl1.Location = new System.Drawing.Point(24, 32);
-      this.bmpControl1.Size = new System.Drawing.Size(200, 200);
-      this.bmpControl1.Dock = DockStyle.Fill;
-      this.bmpControl1.TabIndex = 0;
       // 
       // glPreviewControl1
       // 
@@ -59,10 +52,7 @@ namespace RateRacerGUI
 
       this.SuspendLayout();
       panel1.Controls.Add(this.glPreviewControl1);
-      panel2.Controls.Add(this.bmpControl1);
       this.ResumeLayout(false);
-
-      bmpControl1.createBitmap();
 		}
 
 		/// <summary>
@@ -89,8 +79,10 @@ namespace RateRacerGUI
 		{
       System.Resources.ResourceManager resources = new System.Resources.ResourceManager(typeof(MainForm));
       this.panel1 = new System.Windows.Forms.Panel();
-      this.panel2 = new System.Windows.Forms.Panel();
-      this.button1 = new System.Windows.Forms.Button();
+      this.mainMenu1 = new System.Windows.Forms.MainMenu();
+      this.menuItem1 = new System.Windows.Forms.MenuItem();
+      this.menuItem2 = new System.Windows.Forms.MenuItem();
+      this.miRender = new System.Windows.Forms.MenuItem();
       this.SuspendLayout();
       // 
       // panel1
@@ -100,38 +92,43 @@ namespace RateRacerGUI
         | System.Windows.Forms.AnchorStyles.Right)));
       this.panel1.Location = new System.Drawing.Point(8, 8);
       this.panel1.Name = "panel1";
-      this.panel1.Size = new System.Drawing.Size(288, 400);
+      this.panel1.Size = new System.Drawing.Size(680, 352);
       this.panel1.TabIndex = 0;
       // 
-      // panel2
+      // mainMenu1
       // 
-      this.panel2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-        | System.Windows.Forms.AnchorStyles.Right)));
-      this.panel2.Location = new System.Drawing.Point(328, 8);
-      this.panel2.Name = "panel2";
-      this.panel2.Size = new System.Drawing.Size(400, 400);
-      this.panel2.TabIndex = 1;
+      this.mainMenu1.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+                                                                              this.menuItem1,
+                                                                              this.miRender});
       // 
-      // button1
+      // menuItem1
       // 
-      this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-      this.button1.Location = new System.Drawing.Point(304, 8);
-      this.button1.Name = "button1";
-      this.button1.Size = new System.Drawing.Size(16, 95);
-      this.button1.TabIndex = 2;
-      this.button1.Text = "Render";
-      this.button1.Click += new System.EventHandler(this.button1_Click);
+      this.menuItem1.Index = 0;
+      this.menuItem1.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+                                                                              this.menuItem2});
+      this.menuItem1.Text = "Rendering";
+      // 
+      // menuItem2
+      // 
+      this.menuItem2.Index = 0;
+      this.menuItem2.Text = "Use pathtracing";
+      // 
+      // miRender
+      // 
+      this.miRender.Index = 1;
+      this.miRender.Text = "Render!";
+      this.miRender.Click += new System.EventHandler(this.miRender_Click);
       // 
       // MainForm
       // 
       this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-      this.ClientSize = new System.Drawing.Size(736, 418);
-      this.Controls.Add(this.button1);
-      this.Controls.Add(this.panel2);
+      this.ClientSize = new System.Drawing.Size(696, 368);
       this.Controls.Add(this.panel1);
       this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+      this.Menu = this.mainMenu1;
       this.Name = "MainForm";
       this.Text = "Rate Racer - a renderer";
+      this.Load += new System.EventHandler(this.MainForm_Load);
       this.ResumeLayout(false);
 
     }
@@ -144,17 +141,58 @@ namespace RateRacerGUI
 		static void Main() 
 		{
       RateRacerEngine.init();
-			Application.Run(new MainForm());
+
+      Application.EnableVisualStyles();
+      Application.DoEvents();
+
+      MainForm mainForm = new MainForm();
+			Application.Run(mainForm);
+      mainForm.Dispose();
+
       RateRacerEngine.finish();
     }
 
     private void MainForm_Load(object sender, System.EventArgs e)
     {
+    
     }
 
-    private void button1_Click(object sender, System.EventArgs e)
+    private void miRender_Click(object sender, System.EventArgs e)
     {
-      RateRacerEngine.render();
+      startRender();
     }
-	}
+
+    void startRender()
+    {
+      Console.WriteLine("startRender: " + System.Threading.Thread.CurrentThread.GetHashCode());
+      if (mRenderForm == null) 
+      {
+        mRenderForm = new RenderForm();
+
+        MethodInvoker mi = new MethodInvoker(createRenderWindow);
+        mi.BeginInvoke(null, null);
+
+        //mRenderForm.startRendering();
+      }
+      else {
+        mRenderForm.startRendering();
+      }
+    }
+
+    void createRenderWindow()
+    {
+      Console.WriteLine("create: " + System.Threading.Thread.CurrentThread.GetHashCode());
+      mRenderForm.Closed += new System.EventHandler(this.RenderForm_Closed);
+      mRenderForm.Show();
+
+      Application.Run();
+    }
+
+    private void RenderForm_Closed(object sender, System.EventArgs e)
+    {
+      Console.WriteLine("Closed: " + System.Threading.Thread.CurrentThread.GetHashCode());
+      mRenderForm = null;
+    }
+
+  }
 }

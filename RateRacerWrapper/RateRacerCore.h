@@ -61,7 +61,7 @@ namespace RateRacerCore
 		static void render()
 		{
       // Transfer camera settings here!!!
-			mImagePlane->SetRenderThreadRedraw(true);
+			mImagePlane->RequestRenderThreadRedraw();
 		}
 
 		static CameraControl* mCamControl;

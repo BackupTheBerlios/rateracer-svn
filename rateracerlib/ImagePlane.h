@@ -92,15 +92,12 @@ public:
 	static DWORD WINAPI ThreadFunc(LPVOID param);
 	void RenderThreadEntryPoint();
 
-	bool GetRenderThreadRedraw();
-	void SetRenderThreadRedraw(bool v);
-
-	bool GetRenderThreadExit();
-	void SetRenderThreadExit(bool v);
+	void RequestRenderThreadRedraw();
 
 	HANDLE mhRenderThread;
-	CriticalSection mCritSecThreadExit;
 	CriticalSection mCritSecPixels;
+
 	bool mRenderThreadExit;
+  bool mRenderThreadStop;
 	bool mRenderThreadRedraw;
 };

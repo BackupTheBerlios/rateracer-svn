@@ -43,6 +43,7 @@ ImagePlane::ImagePlane()
 	//mLightPosition4.assign(0,0,100,1);
 
 	mRenderThreadExit = false;
+  mRenderThreadStop = false;
 	mRenderThreadRedraw = false;
 }
 
@@ -60,13 +61,12 @@ ImagePlane::~ImagePlane()
 
 void ImagePlane::RenderThreadEntryPoint()
 {
-	SetRenderThreadExit(false);
-
-	while(!GetRenderThreadExit())
+	while(!mRenderThreadExit)
 	{
-		if (GetRenderThreadRedraw())
+		if (mRenderThreadRedraw)
 		{
-			SetRenderThreadRedraw(false);
+      mRenderThreadRedraw = false;
+      mRenderThreadStop = false;
 
 			mCritSecPixels.lock();
 			TraceScene();
@@ -85,28 +85,11 @@ void ImagePlane::RenderThreadEntryPoint()
 	}
 }
 
-bool ImagePlane::GetRenderThreadExit()
+void ImagePlane::RequestRenderThreadRedraw()
 {
-	SingleLock lock(&mCritSecThreadExit, TRUE);
-	return mRenderThreadExit;
-}
-
-void ImagePlane::SetRenderThreadExit(bool v)
-{
-	SingleLock lock(&mCritSecThreadExit, TRUE);
-	mRenderThreadExit = v;
-}
-
-bool ImagePlane::GetRenderThreadRedraw()
-{
-	SingleLock lock(&mCritSecPixels, TRUE);
-	return mRenderThreadRedraw;
-}
-
-void ImagePlane::SetRenderThreadRedraw(bool v)
-{
-	SingleLock lock(&mCritSecPixels, TRUE);
-	mRenderThreadRedraw = v;
+  mRenderThreadStop = true;
+	//SingleLock lock(&mCritSecPixels, TRUE);
+	mRenderThreadRedraw = true;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -119,16 +102,19 @@ void ImagePlane::Init()
 
 	//mRayEngine->init();
 
+  mRenderThreadExit = false;
+
 	DWORD dwThreadId;
 	mhRenderThread = CreateThread(NULL, 0, ThreadFunc, (LPVOID)this, 0, &dwThreadId);
 
 	//
-	//SetRenderThreadRedraw(true);
+	//RequestRenderThreadRedraw();
 }
 
 void ImagePlane::Shutdown()
 {
-	SetRenderThreadExit(true);
+  mRenderThreadStop = true;
+	mRenderThreadExit = true;
 	WaitForSingleObject(mhRenderThread, INFINITE);
 
 	//mRayEngine->shutdown();
@@ -150,8 +136,9 @@ void ImagePlane::TraceScene()
 		mPixels[n].setZero();
 	}
 
-	clock_t nowtime, lasttime = clock();
 	clock_t starttime = clock();
+  //clock_t nowtime, lasttime = starttime;
+
 	if (!mDrawRealtime) {
 		printf("Rendering started...");
 	}
@@ -238,9 +225,9 @@ void ImagePlane::TraceScene()
 				//mRayEngine->dbgEndStoringRays();
 
 				idx++;
+
+        if (mRenderThreadStop) break;
 			}
-			if (GetRenderThreadRedraw()) break;
-			if (GetRenderThreadExit()) break;
 		}
 		RequestRedraw();
 		}
@@ -337,15 +324,15 @@ void ImagePlane::TraceScene()
 				mRayEngine->dbgEndStoringRays();
 
 				idx++;
-			}
-			if (GetRenderThreadRedraw()) break;
-			if (GetRenderThreadExit()) break;
 
-			nowtime = clock();
-			if (!mDrawRealtime && nowtime - lasttime > CLOCKS_PER_SEC) {
+        if (mRenderThreadStop) break;
+			}
+
+			/*nowtime = clock();
+      if (!mDrawRealtime && nowtime - lasttime > CLOCKS_PER_SEC) {
 				lasttime = nowtime;
 				//RequestRedraw();
-			}
+			}*/
 		}
 	}
 
@@ -640,7 +627,7 @@ void ImagePlane::onChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 			} else {
 				prepareImage(200, 150);
 			}
-			SetRenderThreadRedraw(true);
+			RequestRenderThreadRedraw();
 			break;
 		case 'O' :
 			mRayEngine->mUsePathTracing = !mRayEngine->mUsePathTracing;

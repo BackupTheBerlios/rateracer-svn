@@ -65,7 +65,7 @@ namespace Gweronimo
 
 	void BmpControl::createBitmap()
 	{
-		mBitmap = new Bitmap(100,100,PixelFormat::Format32bppArgb);
+		//mBitmap = new Bitmap(100,100,PixelFormat::Format32bppArgb);
 
 		/*
 		mBMI = new BITMAPINFO;
@@ -113,7 +113,7 @@ namespace Gweronimo
 		//e->Graphics->FillRectangle(b, this->ClientRectangle);
 
 		//if (mPixels != NULL)
-		if (mBitmap != NULL)
+		//if (mBitmap != NULL)
 		{
 			//Console::WriteLine(S"Painting...");
 
@@ -128,6 +128,7 @@ namespace Gweronimo
 			RateRacerEngine::mImagePlane->displayGdiPlusBitmap(realHDC);
 
 			e->Graphics->ReleaseHdc(hdc);
+/*
 #if 0
 			BitmapData* bmd = mBitmap->LockBits(
 				System::Drawing::Rectangle(0,0,mBitmap->Width, mBitmap->Height),
@@ -137,27 +138,25 @@ namespace Gweronimo
 				PixelFormat::Format32bppArgb);
 
 			UINT* pixels = (UINT*)bmd->Scan0.ToPointer();
-			/*
-			pixels[0001] = 0xFF000000;
-			pixels[5050] = 0xFFFF0000;
-			pixels[5051] = 0xFF00FF00;
-			pixels[5052] = 0xFF0000FF;
-			pixels[9999] = 0xFF000000;
 
-			static int n = 0;
-			pixels[n] = 0xFF000000;
-			n = (n + 1) % 10000;
-			*/
-			/*
-			static bool b = true;
-			static int v = 0;
-			for (int n = 0; n < 10000; n++) {
-				//pixels[n] = b ? 0xFF000000 : 0xFFFFFFFF;
-				pixels[n] = 0xFF000000 + v*0x10000;
-			}
-			b = !b;
-			v = (v + 5) % 256;
-			*/
+//			pixels[0001] = 0xFF000000;
+//			pixels[5050] = 0xFFFF0000;
+//			pixels[5051] = 0xFF00FF00;
+//			pixels[5052] = 0xFF0000FF;
+//			pixels[9999] = 0xFF000000;
+//
+//			static int n = 0;
+//			pixels[n] = 0xFF000000;
+//			n = (n + 1) % 10000;
+
+//			static bool b = true;
+//			static int v = 0;
+//			for (int n = 0; n < 10000; n++) {
+//				//pixels[n] = b ? 0xFF000000 : 0xFFFFFFFF;
+//				pixels[n] = 0xFF000000 + v*0x10000;
+//			}
+//			b = !b;
+//			v = (v + 5) % 256;
 			for (int x = 0; x < 100; x++) {
 				for (int y = 0; y < 100; y++) {
 					float value = 0.5f * (1 + sinf(0.1f * (x*x + y*y)));
@@ -170,6 +169,7 @@ namespace Gweronimo
 			e->Graphics->InterpolationMode = InterpolationMode::Bicubic;//NearestNeighbor;
 			e->Graphics->DrawImage(mBitmap, 0, 0, 201, 201);
 #endif
+*/
 		}
 	}
 
