@@ -1,0 +1,29 @@
+
+TODO:
+
+- (Use Ctrl-F5 to start program in Release!)
+- Check stack and heap usage!
+- fast sqrt etc
+# pressing 'j' twice deadlocks program!
+- Clamp all dot products where applicable! posDot(a,b)
+- Simulated refractive thickness (for single-sided meshes with occluded edges)
+- Use HDRI loader from AL, or cubemaps...
+- GIF anim / AVI
+- adaptive epsilon (ray length)? multiple epsilons?
+- offset epsilon along normal instead (+ ray direction?)
+- GetProfileInt/Struct, timing class
+- path-branching at deeper levels if ray is specular/refracted...
+- mark rectangle for subrendering!
+- (turn slow stuff off while changing view? points etc)
+- rerender when view has changed and stabilized, auto-hide preview
+- better preview: fix all shape types
+- render progress/timing output!
+- camera class (incl ray handling), colorRGB class?
+- more lightsrc subclasses! Calc lighting inside lightsrc class?
+- parallel/directional light?
+- move light around (fix last touches only!) (move to control class?)
+- glow/halo, distance functions
+- efficient ground/wall/roof plane tests
+- hardcoded floor, headlight?
+# STD_LOOP etc, or replace STL?
+- gloss map, radial fog, fuzzy/fogged refl/refr
