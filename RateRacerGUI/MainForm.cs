@@ -51,6 +51,7 @@ namespace RateRacerGUI
     private System.Windows.Forms.Splitter splitter1;
     private System.Windows.Forms.Splitter splitter2;
     private System.Windows.Forms.Button btnStop;
+    private System.Windows.Forms.ProgressBar progressBar1;
 		/// <summary>
 		/// Required designer variable.
 		/// </summary>
@@ -188,6 +189,7 @@ namespace RateRacerGUI
       this.statusPanel = new System.Windows.Forms.Panel();
       this.renderPanel = new System.Windows.Forms.Panel();
       this.splitter1 = new System.Windows.Forms.Splitter();
+      this.progressBar1 = new System.Windows.Forms.ProgressBar();
       this.sidePanel.SuspendLayout();
       this.propsPanel.SuspendLayout();
       this.statusPanel.SuspendLayout();
@@ -423,7 +425,7 @@ namespace RateRacerGUI
         | System.Windows.Forms.AnchorStyles.Right)));
       this.lblStatus.Location = new System.Drawing.Point(8, 4);
       this.lblStatus.Name = "lblStatus";
-      this.lblStatus.Size = new System.Drawing.Size(648, 16);
+      this.lblStatus.Size = new System.Drawing.Size(464, 16);
       this.lblStatus.TabIndex = 2;
       this.lblStatus.Text = "lblStatus";
       this.lblStatus.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -431,6 +433,7 @@ namespace RateRacerGUI
       // statusPanel
       // 
       this.statusPanel.BackColor = System.Drawing.SystemColors.Control;
+      this.statusPanel.Controls.Add(this.progressBar1);
       this.statusPanel.Controls.Add(this.lblStatus);
       this.statusPanel.Dock = System.Windows.Forms.DockStyle.Bottom;
       this.statusPanel.Location = new System.Drawing.Point(0, 405);
@@ -456,6 +459,14 @@ namespace RateRacerGUI
       this.splitter1.Size = new System.Drawing.Size(3, 405);
       this.splitter1.TabIndex = 5;
       this.splitter1.TabStop = false;
+      // 
+      // progressBar1
+      // 
+      this.progressBar1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+      this.progressBar1.Location = new System.Drawing.Point(480, 4);
+      this.progressBar1.Name = "progressBar1";
+      this.progressBar1.Size = new System.Drawing.Size(176, 16);
+      this.progressBar1.TabIndex = 3;
       // 
       // MainForm
       // 
@@ -604,6 +615,7 @@ namespace RateRacerGUI
       int percentage = bmpControl1.renderingPercentage();
       float timeSecs = bmpControl1.renderingTimeSeconds();
 
+      progressBar1.Value = percentage;
       if (percentage == 100)
       {
         lblStatus.Text = "Rendering: Done! " + timeString(timeSecs);

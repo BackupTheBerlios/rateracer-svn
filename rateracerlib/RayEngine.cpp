@@ -437,13 +437,29 @@ Vec3 RayEngine::twoTonePaint(Vec3& p, Vec3& N, Vec3& V)
 {
   Vec3 color;
   /*
-  Two-tone paint:
+  Multi-tone base paint layer + two-coat metallic sparkle layer
+  //
+  View-dependent lerp between 3 paint colors
+  Uses subtractive tone to control overall color accumulation
+  saturate(NdotV);
+  colorShift = c0*NdotV + c1*NdotV^2 + c2*NdotV^4;
+  //
+  Simulate two layers of microflake deposits:
+  k1 = 0.1; k2 = 1;
+  N1 = (N + k1 * Nnoise).normalize();
+  N2 = (N + k2 * Nnoise).normalize();
+  sparkles = cFlakes * (N1dotV + N1dotV^2 + N1dotV^4 + N2dotV^16);
+  //
+  Combined approach:
   N = Normal
   Nn = Hi Freq Normalized Vector Noise
-  Ns = (a*Nn + b*N).normalize() // a << b
+  Ns  = (a*Nn + b*N).normalize() // a << b
   Nss = (c*Nn + d*N).normalize() // c = d
   Ctwo_tone = c0*dot(Ns,V) + c1*dot(Ns,V)^2 + c2*dot(Ns,V)^4
   Cmicroflakes = c3*dot(Nss,V)^16
+  //
+  Add clear coat (HDR) reflective layer: (blur reflections by closs map)
+  reflection * (1 - 0.5 * NdotV)
   */
   Vec3 Nn = Vec3(rnd0(),rnd0(),rnd0()).normalize();
   Vec3 perturbN1 = (N + 0.03f*Nn).normalize();
@@ -472,9 +488,7 @@ Vec3 RayEngine::twoTonePaint(Vec3& p, Vec3& N, Vec3& V)
   Vec3 colorEnd(0.0f,0.35f,-0.35f);
   Vec3 colorSparkles(0.5f,0.5f,0.0f);
   //
-  color = colorBeg * base1 +
-    colorMid * powf(base1,2) +
-    colorEnd * powf(base1,4);
+  color = colorBeg * base1 + colorMid * powf(base1,2) + colorEnd * powf(base1,4);
   color += colorSparkles * powf(base2,16);
   return color;
 }
