@@ -423,19 +423,87 @@ void chunksExport::exportSceneData(const char *fullpath, bool exportAll)
 
 void chunksExport::exportCameras(FILE* outfile, bool exportAll)
 {
-	MDagPath currentPath;
+	printf("\nExporting cameras...\n");
+  MSpace::Space space = MSpace::kWorld;
+  MStatus status;
+  /*
+   * Iterate over all cameras
+   */
+  MItDag iter( MItDag::TraversalType::kBreadthFirst, MFn::kCamera, &status );
+  /*
+   * Camera counter
+   */
+  int cameraId = 0;
+  while( !iter.isDone( ) ) {
+    MDagPath path;
+    status = iter.getPath( path );
 
-	MItDag camIterator(MItDag::kDepthFirst, MFn::kCamera);
+    MFnCamera camera( path, &status );
+    /*
+     * Get the "ordinary" camera stuff
+     */
+    MPoint eye     = camera.eyePoint( space, &status );
+    MVector up     = camera.upDirection( space, &status );
+    MPoint look_at = camera.centerOfInterestPoint( space, &status );
+    MVector dir    = look_at - eye;
+    dir.normalize( );
+    double hfov    = camera.horizontalFieldOfView( &status );
+    double vfov    = camera.verticalFieldOfView( &status );
+    MString name   = camera.name( );
+    // What on earch is focal length used for??
+    double focalLength = camera.focalLength( );
+    /*
+     * Ortho camera stuff
+     */
+    bool is_ortho  = camera.isOrtho( &status );
+    double left, right, bottom, top;
+    double aspect  = camera.aspectRatio( &status );
+    status = camera.getRenderingFrustum( aspect, left, right, bottom, top );
+    /*
+     * Depth of field is a *must have*!
+     * NOTE: Parameter "Focus region scale" is missing!
+     */
+    // Do we have dof or not?
+    bool dof = camera.isDepthOfField( );
+    double focusDist   = camera.focusDistance( );
+    double fStop       = camera.fStop( );
+    /* 
+     * And write it like this:
+     *    <camera id="" type="perspective/ortho/...">
+     *      <position x="1.0" y="1.0" z="1.0" />
+     *      <direction x="1.0" y="1.0" z="1.0" />
+     *      <up x="1.0" y="1.0" z="1.0" />
+     *      <fov horiz="1.0" vert="1.0" />
+     *    </camera>
+     */
+    // Taken from GM, perhaps move this someplace else?
+    float const RADTODEG = 57.29577951308232286465f;
+    fprintf( outfile, "<camera id='%s' type='perspective'>\n", name.asChar( ) );
+    fprintf( outfile, "  <position x='%.3f' y='%.3f' z='%.3f' />\n",  eye.x, eye.y, eye.z );
+    fprintf( outfile, "  <direction x='%.3f' y='%.3f' z='%.3f' />\n", dir.x, dir.y, dir.z );
+    fprintf( outfile, "  <up x='%.3f' y='%.3f' z='%.3f' />\n", up.x, up.y, up.z );
+    fprintf( outfile, "  <fov horiz='%.3f' vert='%.3f' />\n", RADTODEG * hfov, RADTODEG * vfov );
+    if( dof ) {
+      fprintf( outfile, "  <dof focusdist='%.3f' fstop='%.3f' />\n", focusDist, fStop );
+    }
+    fprintf( outfile, "</camera>\n" );
+    /*     
+    TODO: maybe add support for orthogonal cameras?
+    
+    if( is_ortho ) {
+        fprintf(file, "OrthoCamera %lf %lf %lf %lf  %lf %lf %lf  %lf %lf %lf  %lf %lf %lf\n",
+          left, right, top, bottom, eye.x, eye.y, eye.z, look_at.x, look_at.y, look_at.z,
+          up.x, up.y, up.z);
+    }
+    */
+    iter.next();
+    cameraId++;
 
-	for( ; !camIterator.isDone(); camIterator.next() )
-	{
-		camIterator.getPath( currentPath ); 
-		//currentPath.extendToShape();
+  } // while
 
-		MFnCamera fnCamera(currentPath);
 
-    printf("\nFound camera: %s\n", fnCamera.name().asChar() );
-	}
+	
+	
 }
 
 void chunksExport::exportLights(FILE* outfile, bool exportAll)

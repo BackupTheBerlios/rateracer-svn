@@ -7,3 +7,4 @@ RateRacer project log
 - Added MayaExporter project (chunksExport plugin, export .chunks and .chunks.xml)
 - FD successfully checked everything out, and commited for the first time :-)
 - Tested SubVersion conflict handling.
+- Added camera export 
