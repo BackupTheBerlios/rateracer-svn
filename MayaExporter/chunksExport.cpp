@@ -212,7 +212,15 @@ void chunksExport::exportMeshes(const char *fullpath, bool exportSelectedOnly)
 	{
 		dagIterator.getPath( currentPath ); 
 		//currentPath.extendToShape();
+    MFnDagNode fnDagNode( currentPath );
 		
+    if(fnDagNode.isIntermediateObject())
+      continue;
+
+    bool visible;
+    fnDagNode.findPlug("visibility").getValue(visible);
+    if (!visible) continue;
+
 		if (exportSelectedOnly && !isNodeInSelection(currentPath, selectionList))
 			continue;
 
@@ -236,6 +244,7 @@ void chunksExport::exportMeshes(const char *fullpath, bool exportSelectedOnly)
 		MObjectArray			shaderSets;
 		MObjectArray			faceGroups;
 
+    // FIXME replace with getConnectedShaders() ...
 		fnMesh.getConnectedSetsAndMembers(
 			currentPath.instanceNumber(),
 			shaderSets, faceGroups, true);
@@ -250,7 +259,7 @@ void chunksExport::exportMeshes(const char *fullpath, bool exportSelectedOnly)
 				// Default shader has empty component list
 				if (MFnComponent(faceGroups[i]).elementCount() == 0) {
 					numGroups--;
-					//printf("\nDefault shader skipped!\n");
+					//printf("\nEmpty shader group skipped!\n");
 				}
 			}
 		}
@@ -308,16 +317,17 @@ void chunksExport::exportMeshes(const char *fullpath, bool exportSelectedOnly)
 
 		std::vector< MeshGroup* > meshgroupsVector;
 
-		for (g = 0; g < numGroups; g++)
+		for (g = 0; g < (int)shaderSets.length(); g++)
 		{
-			// Skip default shader connection if multiple shaders exist
-			// FIXME cleanup this messy handling!
-			if (shaderSets.length() > 1 &&
-					MFnComponent(faceGroups[g]).elementCount() == 0)
-			{
-				printf("\nDefault shader skipped!\n");
-				continue;
-			}
+      if (shaderSets.length() > 1)
+      {
+			  // Skip default shader connection if multiple shaders exist
+			  if (MFnComponent(faceGroups[g]).elementCount() == 0)
+			  {
+				  printf("(Empty shader group skipped)\n");
+				  continue;
+			  }
+      }
 
 			MObject shader = findFirstPlugConnection(shaderSets[g], "surfaceShader");
 
@@ -346,8 +356,8 @@ void chunksExport::exportMeshes(const char *fullpath, bool exportSelectedOnly)
 			}
 			totalNumTriangles += numTris;
 
-			printf("Group %d: %d triangles in %d polygons (max. %d tris per poly).\n",
-				g, numTris, numPolys, maxNumTrisPerPolygon);
+			printf("Group: %d triangles in %d polygons (max. %d tris per poly).\n",
+				numTris, numPolys, maxNumTrisPerPolygon);
 
 			MeshGroup* newGroup = new MeshGroup( nodeName(shader).asChar(), numTris );
 
@@ -413,8 +423,6 @@ void chunksExport::exportMeshes(const char *fullpath, bool exportSelectedOnly)
 			newMesh->meshGroups[n] = meshgroupsVector[n];
 		}
 		
-		MFnDagNode fnDagNode(currentPath);
-
 		bool doubleSided = false;
 		fnDagNode.findPlug( "doubleSided" ).getValue(doubleSided);
 		if (doubleSided) printf("* Warning: mesh is double-sided!\n");
