@@ -155,12 +155,12 @@ public:
 		return lastHit->getTangent(p);
 	}
 
-  /*void rasterize(Grid *grid)
+  void rasterize(Grid *grid)
 	{
 		for (int n = 0; n < (int)mMeshes.size(); n++) {
 			mMeshes[n]->rasterize(grid);
 		}
-	}*/
+	}
 
 	void drawBoundingBoxes()
 	{

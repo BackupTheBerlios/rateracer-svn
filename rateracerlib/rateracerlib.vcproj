@@ -129,6 +129,12 @@
 				RelativePath=".\mathlib\Random.h">
 			</File>
 			<File
+				RelativePath=".\mathlib\triboxtest.cpp">
+			</File>
+			<File
+				RelativePath=".\mathlib\triboxtest.h">
+			</File>
+			<File
 				RelativePath=".\mathlib\Vec2.h">
 			</File>
 			<File
@@ -186,6 +192,12 @@
 		</File>
 		<File
 			RelativePath=".\DebugDraw.h">
+		</File>
+		<File
+			RelativePath=".\Grid.cpp">
+		</File>
+		<File
+			RelativePath=".\Grid.h">
 		</File>
 		<File
 			RelativePath=".\ImagePlane.cpp">

@@ -30,16 +30,11 @@ namespace Gweronimo
 			mCamControl->mUseTrackballControl = value;
 		}
 	
-		__property float get_FOV()
-		{
-			return mCamControl->mFOV;
-		}
-		__property void set_FOV(float value)
-		{
-			mCamControl->mFOV = value;
-		}
+		STD_PROPERTY(float, FieldOfView, mCamControl->mFOV)
 
 		STD_PROPERTY(bool, UsePathtracing, mRayEngine->mUsePathTracing)
+
+		STD_PROPERTY(bool, UseGrid, mScene->mUseGrid)
 
 		/*
 		case 'D' : mRayEngine->mUseAttenuation = !mRayEngine->mUseAttenuation; break;
@@ -58,6 +53,7 @@ namespace Gweronimo
 
 		CameraControl* mCamControl;
 		RayEngine *mRayEngine;
-		static ImagePlane *mImagePlane;
+		ImagePlane *mImagePlane;
+		Scene *mScene;
 	};
 } // namespace

@@ -60,7 +60,6 @@ public:
 	}
 	*/
 
-	/*
 	void rasterize(Grid *grid)
 	{
 		const float r = 1.0f / invRadius;
@@ -104,7 +103,6 @@ public:
 			}
 		}
 	}
-	*/
 
 	void drawPreview()
 	{

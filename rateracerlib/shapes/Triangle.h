@@ -4,7 +4,7 @@
 
 #include "DebugDraw.h"
 
-//#include "mathlib/triboxtest.h"
+#include "mathlib/triboxtest.h"
 
 class Triangle : public Shape
 {
@@ -130,7 +130,6 @@ public:
 			return Vec2(0,0);
 	}
 
-	/*
 	void rasterize(Grid *grid)
 	{
 		Vec3 min, max;
@@ -168,7 +167,6 @@ public:
 			}
 		}
 	}
-	*/
 
 	void drawBoundingBoxes()
 	{

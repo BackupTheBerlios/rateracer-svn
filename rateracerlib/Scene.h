@@ -22,14 +22,14 @@ public:
 	void DestroyScene();
 
 	void drawScenePreview();
-	//void dbgDrawGrid();
+	void dbgDrawGrid();
 
 	void calcSceneBoundingBox(Vec3& min, Vec3& max);
 
-	//void prepareGrid();
-	//Grid *mGrid;
-	//bool mUseGrid;
-	//bool mDrawGrid;
+	void prepareGrid();
+	Grid *mGrid;
+	bool mUseGrid;
+	bool mDrawGrid;
 
 	std::vector<LightSource*>	mLights;
 	std::vector<Shape*> mShapes;

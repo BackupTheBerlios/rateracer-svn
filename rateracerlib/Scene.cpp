@@ -4,6 +4,8 @@
 
 #include "LightSource.h"
 
+#include "Grid.h"
+
 #include "shapes/Sphere.h"
 #include "shapes/MetaBalls.h"
 #include "shapes/Plane.h"
@@ -20,8 +22,8 @@ Vec2 gDefaultUV(0,0);
 
 Scene::Scene()
 {
-	//mUseGrid = false;
-	//mDrawGrid = false;
+	mUseGrid = true;
+	mDrawGrid = false;
 }
 
 Scene::~Scene()
@@ -377,31 +379,6 @@ void Scene::InitScene()
 	mShapes.push_back(obj);
 #endif
 
-#if 1
-	// Floor disc
-	obj = new Disc( Vec3(0,0,0), 0, 15, Vec3(0,1,0));
-	obj->material = mat = new Material();
-	//mat->diffColor.assign(1,1,1);
-	mat->diffColor.assign(0.5f,0.5f,0.5f);
-	mat->shininess = 60.0f;
-	mat->fresnelAmountAtNormalIncidence = 0;
-	//mat->loadTexture("textures/glass.bmp");
-	//mat->reflect = 0.5f;
-	mShapes.push_back(obj);
-
-	// Floor ////////////////////////////////////////////////////////////////////
-	/*
-	obj = new Plane( Vec3(0,0,1), 0 );
-	obj->material = mat = new Material();
-	//mat->diffColor.assign(1,1,1);
-	mat->diffColor.assign(0.5f,0.5f,0.5f);
-	mat->shininess = 60.0f;
-	mat->fresnelAmountAtNormalIncidence = 0;
-	//mat->loadTexture("textures/glass.bmp");
-	mShapes.push_back(obj);
-	*/
-#endif
-
 #if 0
 	// Roof ////////////////////////////////////////////////////////////////////
 	obj = new Plane( Vec3(0,-1,0), -10 );
@@ -444,6 +421,31 @@ void Scene::InitScene()
 	mShapes.push_back(obj);
 #endif
 
+#if 1
+	// Floor disc
+	obj = new Disc( Vec3(0,0,0), 0, 15, Vec3(0,1,0));
+	obj->material = mat = new Material();
+	//mat->diffColor.assign(1,1,1);
+	mat->diffColor.assign(0.5f,0.5f,0.5f);
+	mat->shininess = 60.0f;
+	mat->fresnelAmountAtNormalIncidence = 0;
+	//mat->loadTexture("textures/glass.bmp");
+	//mat->reflect = 0.5f;
+	mShapes.push_back(obj);
+
+	// Floor ////////////////////////////////////////////////////////////////////
+	/*
+	obj = new Plane( Vec3(0,0,1), 0 );
+	obj->material = mat = new Material();
+	//mat->diffColor.assign(1,1,1);
+	mat->diffColor.assign(0.5f,0.5f,0.5f);
+	mat->shininess = 60.0f;
+	mat->fresnelAmountAtNormalIncidence = 0;
+	//mat->loadTexture("textures/glass.bmp");
+	mShapes.push_back(obj);
+	*/
+#endif
+
 	mNumShapes = (int)mShapes.size();
 
 	//if (mUsePathTracing) mNumShapes -= 5;
@@ -451,7 +453,7 @@ void Scene::InitScene()
 
 void Scene::DestroyScene()
 {
-	//delete mGrid;
+	delete mGrid;
 
 	int n;
 	for(n = 0; n < (int)mLights.size(); n++)
@@ -546,7 +548,6 @@ void Scene::drawScenePreview()
 	glPopAttrib();
 }
 
-/*
 void Scene::prepareGrid()
 {
 	Vec3 min, max;
@@ -559,9 +560,7 @@ void Scene::prepareGrid()
 
 	mGrid->printGridStatistics();
 }
-*/
 
-/*
 void Scene::dbgDrawGrid()
 {
 	if (mDrawGrid) {
@@ -569,4 +568,3 @@ void Scene::dbgDrawGrid()
 		mGrid->dbgDrawStoredVoxels();
 	}
 }
-*/

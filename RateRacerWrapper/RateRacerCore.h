@@ -35,6 +35,12 @@ namespace RateRacerCore
 			mScene = new Scene();
 			mScene->InitScene();
 
+	    //starttime = clock();
+	    mScene->prepareGrid();
+	    //endtime = clock();
+	    //printf("Grid build time: %.2f seconds\n",
+	    //float(endtime - starttime) / CLOCKS_PER_SEC);
+
 			mRayEngine = new RayEngine();
 			mRayEngine->mScene = mScene;
 			mRayEngine->init();
@@ -48,6 +54,7 @@ namespace RateRacerCore
 			mRenderProps->mCamControl = mCamControl;
 			mRenderProps->mRayEngine  = mRayEngine;
 			mRenderProps->mImagePlane = mImagePlane;
+      mRenderProps->mScene      = mScene;
 		}
 
 		static void finish()

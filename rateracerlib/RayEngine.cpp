@@ -1,10 +1,14 @@
 #include "RayEngine.h"
 #include "Stratification.h"
 
+#include "Grid.h"
+
 #include "DebugDraw.h"
 
 RayEngine::RayEngine()
 {
+  mScene = NULL;
+
 	mMaxRecursionLevel = 15; // TODO: replace with diminishing returns
 
 	mUseSchlickApprox = true;
@@ -20,30 +24,10 @@ RayEngine::~RayEngine()
 
 void RayEngine::init()
 {
-	/*
-	clock_t starttime, endtime;
-
-	starttime = clock();
-	printf("Preparing scene...");
-
-	//mScene->InitScene();
-
-	endtime = clock();
-	printf("finished! Elapsed time: %.2f seconds\n",
-		float(endtime - starttime) / CLOCKS_PER_SEC);
-	*/
-	/*
-	starttime = clock();
-	mScene->prepareGrid();
-	endtime = clock();
-	printf("Grid build time: %.2f seconds\n",
-		float(endtime - starttime) / CLOCKS_PER_SEC);
-	*/
 }
 
 void RayEngine::shutdown()
 {
-	//mScene->DestroyScene();
 }
 
 float accumFunc1(float t, float d, float c)
@@ -68,22 +52,7 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 	//if (level == 0) mMaxLevel = 0;
 	//if (level > mMaxLevel) mMaxLevel = level;
 
-	Shape *hitObject;
-	/*
-	if (mUseGrid) {
-		hitObject = mGrid->findHitInGrid(ray0, excludeObject);
-		// TODO: kludge for unbound ground plane
-		float t = -ray0.ori[1] / ray0.dir[1];
-		if (t > cEpsilon && t < ray0.tHit) {
-			ray0.tHit = t;
-			hitObject = mShapes[mShapes.size()-1];
-		}
-	}
-	else
-	*/
-	{
-		hitObject = findHit(ray0, excludeObject);
-	}
+	Shape *hitObject = findHit(ray0, excludeObject);
 
 	dbgStoreRay(ray0);
 
@@ -346,11 +315,7 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 			rayShadow.offset(cEpsilon, N); // TODO: Not needed because of excludeObj?!
 			Vec3 colorLight = lightSrc->color;
 			Shape *hitOccluder;
-			//if (mUseGrid) {
-			//	hitOccluder = mGrid->findHitInGrid(rayShadow, hitObject);
-			//} else {
-				hitOccluder = findHit(rayShadow, hitObject);
-			//}
+			hitOccluder = mScene->mGrid->findHitInGrid(rayShadow, hitObject);
 			if (hitOccluder != NULL &&
 				  rayShadow.tHit * rayShadow.tHit + cEpsilon < lightDistanceSq)
 			{
@@ -489,6 +454,17 @@ Shape* RayEngine::findHit(Ray& ray0, Shape *excludeObject)
 
 	Shape* hitObject = NULL;
 
+	if (mScene->mUseGrid) {
+		hitObject = mScene->mGrid->findHitInGrid(ray0, excludeObject);
+		// TODO: kludge for unbound ground plane
+		float t = -ray0.ori[1] / ray0.dir[1];
+		if (t > cEpsilon && t < ray0.tHit) {
+			ray0.tHit = t;
+			hitObject = mScene->mShapes[mScene->mShapes.size()-1];
+		}
+    return hitObject;
+	}
+
 	Shape *o;
 	float t;
 	for (int i = 0; i < mScene->mNumShapes; i++) {
@@ -620,13 +596,13 @@ void RayEngine::dbgBeginStoringRays()
 {
 	mStoreRays = true;
 	mStoredRays.clear();
-	//mGrid->dbgBeginStoringVoxels();
+	//mScene->mGrid->dbgBeginStoringVoxels();
 }
 
 void RayEngine::dbgEndStoringRays()
 {
 	mStoreRays = false;
-	//mGrid->dbgEndStoringVoxels();
+	//mScene->mGrid->dbgEndStoringVoxels();
 }
 
 void RayEngine::dbgStoreRay(const Ray& r)

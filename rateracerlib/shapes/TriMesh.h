@@ -203,12 +203,12 @@ public:
 		return lastHit->getTangent(p);
 	}
 
-  /*void rasterize(Grid *grid)
+  void rasterize(Grid *grid)
 	{
-		for (int n = 0; n < (int)mTriangles.size(); n++) {
-			mTriangles[n]->rasterize(grid);
+		for (int n = 0; n < (int)mTriangleGroups.size(); n++) {
+			mTriangleGroups[n]->rasterize(grid);
 		}
-	}*/
+	}
 
 	void drawBoundingBoxes()
 	{
