@@ -524,7 +524,7 @@ void ImagePlane::prepareImage(int width, int height)
 
 	for (int n = 0; n < mRenderHeight * mRenderWidth; n++) {
 		mPixels[n].setZero();
-		mBitmapPixels[n] = 0xFF000000;
+		mBitmapPixels[n] = 0x44000000;//0xFF000000;
 	}
 
 	mCritSecPixels.unlock();
@@ -684,7 +684,9 @@ void ImagePlane::updateBitmapPixels()
 			byte r = byte(255.0f * min2(mPixels[idx][0], 1.0f));
 			byte g = byte(255.0f * min2(mPixels[idx][1], 1.0f));
 			byte b = byte(255.0f * min2(mPixels[idx][2], 1.0f));
-			mBitmapPixels[x + y*mRenderWidth] = 0xFF000000 + (r << 16) + (g << 8) + b;
+      byte alpha = (b > 250) ? 0 : 255; // 0xFF000000
+			mBitmapPixels[x + y*mRenderWidth] =
+        (alpha << 24) + (r << 16) + (g << 8) + b;
 			idx++;
 		}
 	}

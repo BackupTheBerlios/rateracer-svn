@@ -121,110 +121,12 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 	// Debug: Early return (no shading)!
 	//return matColor;
 
-  /*
-  Two-tone paint:
-  N = Normal
-  Nn = Hi Freq Normalized Vector Noise
-  Ns = (a*Nn + b*N).normalize() // a << b
-  Nss = (c*Nn + d*N).normalize() // c = d
-  Ctwo_tone = c0*dot(Ns,V) + c1*dot(Ns,V)^2 + c2*dot(Ns,V)^4
-  Cmicroflakes = c3*dot(Nss,V)^16
-  */
-  Vec3 Nn = Vec3(rnd0(),rnd0(),rnd0()).normalize();
-  Vec3 perturbN1 = (N + 0.03f*Nn).normalize();
-  Vec3 perturbN2 = (N + 0.05f*Nn).normalize();
-  float base1 = dot(perturbN1,V);
-  float base2 = dot(perturbN2,V);
-  /*
-  Vec3 colorBeg(1.0f,0.0f,0.0f);
-  Vec3 colorMid(-1.0f,0,0);
-  Vec3 colorEnd(0,1.0f,0);
-  Vec3 colorSparkles(0.1f,0.1f,0.1f);
-  */
-  // These are the exact colors used in ATI's car demo...
-  Vec3 colorBeg(0.4f,0.0f,0.35f);
-  Vec3 colorMid(0.6f,0.0f,0.0f);
-  Vec3 colorEnd(0.0f,0.35f,-0.35f);
-  Vec3 colorSparkles(0.5f,0.5f,0.0f);
-  //
-  matColor = colorBeg * base1 +
-             colorMid * powf(base1,2) +
-             colorEnd * powf(base1,4);
-  matColor += colorSparkles * powf(base2,16);
+  matColor = twoTonePaint(p, N,V);
 
 	if (material->refract > 0)
 	{
-		bool doRefraction = true;
-		Vec3 T;
-
-		if (material->refract == 1.0f && material->refractInv == 1.0f)
-		{
-			// Special case: non-altered refraction/transmission ray...
-			T = ray0.dir;
-		}
-		else
-		{
-			//float ni = 1;	float nr = 1; float n = ni / nr;
-			float n = material->refract;
-			if (hitInsideOfObject) n = material->refractInv;
-
-			float w = n * NdotV;
-			float radical = 1 + (w - n)*(w + n);
-			if (radical < 0) {
-				// Total internal reflection...
-				fresnelTerm = 1;
-				doRefraction = false;
-				//color = mScene->mBackgroundColor;
-			}
-			else
-			{
-				float k = sqrtf(radical);
-				T = (w - k)*N - n*V;
-				//T = (n*NdotV - sqrtf(1 - n*n*(1 - NdotV*NdotV)))*N - n*V;
-			}
-		}
-
-		if (doRefraction) // fresnelTerm < 1.0f
-		{
-			Ray rayRefr(p, T);
-			rayRefr.offset(cEpsilon, -N);
-			//rayRefr.offset(cEpsilon, T);
-
-			rayRefr.dimRet = ray0.dimRet * (1.0f - fresnelTerm);
-			if (rayRefr.dimRet > 0.001f)
-			{
-				//rayRefr.transmitColor = matColor;
-				if (hitInsideOfObject) {
-					rayRefr.refractInsideCounter = ray0.refractInsideCounter - 1;
-					rayRefr.color.assign(0,1,1);
-				} else {
-					rayRefr.refractInsideCounter = ray0.refractInsideCounter + 1;
-					rayRefr.color.assign(1,0,1);
-				}
-
-				Vec3 colorRefr = TraceRay(rayRefr, level+1);
-
-        /*Beer's Law:
-        if (hitInsideOfObject)
-        {
-          const float beerFactor[3] = { 0.25f, 0.5f, 1.0f };
-          colorRefr[0] *= expf(logf(beerFactor[0]) * ray0.tHit);
-          colorRefr[1] *= expf(logf(beerFactor[1]) * ray0.tHit);
-          colorRefr[2] *= expf(logf(beerFactor[2]) * ray0.tHit);
-        }*/
-				/*
-				if (ray0.isTransmitting)
-				{
-					float f = accumFunc1(ray0.tHit, 1.0f/0.25f, 0.0f);
-					Vec3 col = f*Vec3(1,1,1) + (1-f)*ray0.transmitColor;
-					color = compMul(col, colorRefr);
-					//color = colorRefr;
-				}	else {
-				*/
-				color = compMul(matColor, colorRefr);
-				//color = colorRefr;
-			}
-		}
+    color = handleRefraction(material, ray0, NdotV, fresnelTerm,
+      p, N, V, hitInsideOfObject, level, matColor);
 	}
 
 	Vec3 R = 2*NdotV*N - V; R.normalize();
@@ -322,6 +224,7 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 			{
 				//return Vec3(1,1,0);
 				colorLight.setZero();
+        //continue; // FIXME!
 			}
 			else {
 				if (mScene->mUseAttenuation) {
@@ -447,6 +350,133 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 	}
 
 	return color;
+}
+
+Vec3 RayEngine::handleRefraction(const Material* material, Ray& ray0, float NdotV,
+                                 float& fresnelTerm,
+                                 Vec3& p, Vec3& N, Vec3& V,
+                                 bool hitInsideOfObject, int level,
+                                 Vec3& matColor)
+{
+  Vec3 color(0,0,0);
+  bool doRefraction = true;
+  Vec3 T;
+
+  if (material->refract == 1.0f && material->refractInv == 1.0f)
+  {
+    // Special case: non-altered refraction/transmission ray...
+    T = ray0.dir;
+  }
+  else
+  {
+    //float ni = 1;	float nr = 1; float n = ni / nr;
+    float n = material->refract;
+    if (hitInsideOfObject) n = material->refractInv;
+
+    float w = n * NdotV;
+    float radical = 1 + (w - n)*(w + n);
+    if (radical < 0) {
+      // Total internal reflection...
+      fresnelTerm = 1;
+      doRefraction = false;
+      //color = mScene->mBackgroundColor;
+    }
+    else
+    {
+      float k = sqrtf(radical);
+      T = (w - k)*N - n*V;
+      //T = (n*NdotV - sqrtf(1 - n*n*(1 - NdotV*NdotV)))*N - n*V;
+    }
+  }
+
+  if (doRefraction) // fresnelTerm < 1.0f
+  {
+    Ray rayRefr(p, T);
+    rayRefr.offset(cEpsilon, -N);
+    //rayRefr.offset(cEpsilon, T);
+
+    rayRefr.dimRet = ray0.dimRet * (1.0f - fresnelTerm);
+    if (rayRefr.dimRet > 0.001f)
+    {
+      //rayRefr.transmitColor = matColor;
+      if (hitInsideOfObject) {
+        rayRefr.refractInsideCounter = ray0.refractInsideCounter - 1;
+        rayRefr.color.assign(0,1,1);
+      } else {
+        rayRefr.refractInsideCounter = ray0.refractInsideCounter + 1;
+        rayRefr.color.assign(1,0,1);
+      }
+
+      Vec3 colorRefr = TraceRay(rayRefr, level+1);
+
+      /*Beer's Law:
+      if (hitInsideOfObject)
+      {
+      const float beerFactor[3] = { 0.25f, 0.5f, 1.0f };
+      colorRefr[0] *= expf(logf(beerFactor[0]) * ray0.tHit);
+      colorRefr[1] *= expf(logf(beerFactor[1]) * ray0.tHit);
+      colorRefr[2] *= expf(logf(beerFactor[2]) * ray0.tHit);
+      }*/
+      /*
+      if (ray0.isTransmitting)
+      {
+      float f = accumFunc1(ray0.tHit, 1.0f/0.25f, 0.0f);
+      Vec3 col = f*Vec3(1,1,1) + (1-f)*ray0.transmitColor;
+      color = compMul(col, colorRefr);
+      //color = colorRefr;
+      }	else {
+      */
+      color = compMul(matColor, colorRefr);
+      //color = colorRefr;
+    }
+  }
+  return color;
+}
+
+Vec3 RayEngine::twoTonePaint(Vec3& p, Vec3& N, Vec3& V)
+{
+  Vec3 color;
+  /*
+  Two-tone paint:
+  N = Normal
+  Nn = Hi Freq Normalized Vector Noise
+  Ns = (a*Nn + b*N).normalize() // a << b
+  Nss = (c*Nn + d*N).normalize() // c = d
+  Ctwo_tone = c0*dot(Ns,V) + c1*dot(Ns,V)^2 + c2*dot(Ns,V)^4
+  Cmicroflakes = c3*dot(Nss,V)^16
+  */
+  Vec3 Nn = Vec3(rnd0(),rnd0(),rnd0()).normalize();
+  Vec3 perturbN1 = (N + 0.03f*Nn).normalize();
+  Vec3 perturbN2 = (N + 0.05f*Nn).normalize();
+  float base1, base2;
+  if (mScene->mLights.size() == 0) {
+    base1 = dot(perturbN1,V);
+    base2 = dot(perturbN2,V);
+  }
+  else {
+    Vec3 R1 = 2*dot(perturbN1,V)*perturbN1 - V; R1.normalize();
+    Vec3 R2 = 2*dot(perturbN2,V)*perturbN2 - V; R2.normalize();
+    Vec3 L = mScene->mLights[0]->position - p; L.normalize();
+    base1 = dot(L,R1); if (base1 < 0) base1 = 0;
+    base2 = dot(L,R2); if (base2 < 0) base2 = 0;
+  }
+  /*
+  Vec3 colorBeg(1.0f,0.0f,0.0f);
+  Vec3 colorMid(-1.0f,0,0);
+  Vec3 colorEnd(0,1.0f,0);
+  Vec3 colorSparkles(0.1f,0.1f,0.1f);
+  */
+  // These are the exact colors used in ATI's car demo...
+  Vec3 colorBeg(0.4f,0.0f,0.35f);
+  Vec3 colorMid(0.6f,0.0f,0.0f);
+  Vec3 colorEnd(0.0f,0.35f,-0.35f);
+  Vec3 colorSparkles(0.5f,0.5f,0.0f);
+  //
+  color = colorBeg * base1 +
+    colorMid * powf(base1,2) +
+    colorEnd * powf(base1,4);
+  color += colorSparkles * powf(base2,16);
+  return color;
 }
 
 Shape* RayEngine::findHit(Ray& ray0, Shape *excludeObject)

@@ -70,11 +70,16 @@ namespace RateRacerCore
 			__crt_dll_terminate();
 		}
 
-		static void render()
+		static void startRendering()
 		{
       // Transfer camera settings here!!!
 			mImagePlane->RequestRenderThreadRedraw();
 		}
+
+    static void stopRendering()
+    {
+      mImagePlane->RequestRenderThreadStop();
+    }
 
 		static RenderProps* mRenderProps;
 

@@ -4,6 +4,10 @@
 #include "rateracerlib/RayEngine.h"
 #include "rateracerlib/ImagePlane.h"
 
+#using <system.drawing.dll>
+using namespace System::Drawing;
+using namespace System::Drawing::Drawing2D;
+
 #define STD_PROPERTY(type, name, variable) \
 	__property type get_##name()	{	return variable; } \
 	__property void set_##name(type value)	{	variable = value;	}
@@ -50,6 +54,12 @@ namespace Gweronimo
 		case 'Z' : mRayEngine->mAttC = 1.0f - mRayEngine->mAttC; break;
 		mRayEngine->mUseImplicitCosSampling = !mRayEngine->mUseImplicitCosSampling;
 		*/
+
+    //STD_PROPERTY(Color, colour, mColor)
+    Color mColor;
+
+    //STD_PROPERTY(HatchStyle, hatch, mHatch)
+    HatchStyle mHatch;
 
 		CameraControl* mCamControl;
 		RayEngine *mRayEngine;

@@ -27,6 +27,12 @@ public:
 	void dbgStoreRay(const Ray& r);
 	void dbgDrawStoredRays();
 
+  // tmp
+  Vec3 handleRefraction(const Material* material, Ray& ray0, float NdotV, float& fresnelTerm,
+    Vec3& p, Vec3& N, Vec3& V, bool hitInsideOfObject, int level,
+    Vec3& matColor);
+  Vec3 twoTonePaint(Vec3& p, Vec3& N, Vec3& V);
+
 	// Tracer features
 
 	bool mUseFresnel;

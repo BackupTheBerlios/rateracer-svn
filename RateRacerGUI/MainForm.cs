@@ -19,7 +19,7 @@ namespace RateRacerGUI
     double mAspectRatio;
     float mZoom;
 
-    bool isRendering = false;
+    bool isRendering;
 
     //Timers.Timer mTimer;
     System.Windows.Forms.Timer mTimer;
@@ -50,6 +50,7 @@ namespace RateRacerGUI
     private System.Windows.Forms.CheckBox chkAutoRender;
     private System.Windows.Forms.Splitter splitter1;
     private System.Windows.Forms.Splitter splitter2;
+    private System.Windows.Forms.Button btnStop;
 		/// <summary>
 		/// Required designer variable.
 		/// </summary>
@@ -65,6 +66,7 @@ namespace RateRacerGUI
 			//
 			// TODO: Add any constructor code after InitializeComponent call
 			//
+      isRendering = false;
 
       chkKeepAspect.Checked = true;
 
@@ -110,6 +112,8 @@ namespace RateRacerGUI
       //glPreviewControl1.Dock = DockStyle.Fill;
       glPreviewControl1.TabIndex = 1;
 
+      glPreviewControl1.Cursor = Cursors.Hand;
+
       glPreviewControl1.KeyPress += new KeyPressEventHandler(image_KeyPress);
       glPreviewControl1.MouseMove +=new MouseEventHandler(glPreviewControl1_MouseMove);
       glPreviewControl1.MouseUp +=new MouseEventHandler(glPreviewControl1_MouseUp);
@@ -122,6 +126,8 @@ namespace RateRacerGUI
       //bmpControl1.Anchor = AnchorStyles.Left | AnchorStyles.Top;
       //bmpControl1.Dock = DockStyle.Fill;
       bmpControl1.TabIndex = 0;
+
+      bmpControl1.Cursor = Cursors.Cross;
 
       bmpControl1.KeyPress += new KeyPressEventHandler(image_KeyPress);
       bmpControl1.PostProcessingDone +=new EventHandler(bmpControl1_PostProcessingDone);
@@ -164,6 +170,7 @@ namespace RateRacerGUI
       this.sidePanel = new System.Windows.Forms.Panel();
       this.splitter2 = new System.Windows.Forms.Splitter();
       this.propsPanel = new System.Windows.Forms.Panel();
+      this.btnStop = new System.Windows.Forms.Button();
       this.chkAutoRender = new System.Windows.Forms.CheckBox();
       this.btnRender = new System.Windows.Forms.Button();
       this.chkInterpolate = new System.Windows.Forms.CheckBox();
@@ -228,6 +235,7 @@ namespace RateRacerGUI
       // 
       // splitter2
       // 
+      this.splitter2.BackColor = System.Drawing.SystemColors.Control;
       this.splitter2.Dock = System.Windows.Forms.DockStyle.Top;
       this.splitter2.Location = new System.Drawing.Point(0, 160);
       this.splitter2.Name = "splitter2";
@@ -237,6 +245,7 @@ namespace RateRacerGUI
       // 
       // propsPanel
       // 
+      this.propsPanel.Controls.Add(this.btnStop);
       this.propsPanel.Controls.Add(this.chkAutoRender);
       this.propsPanel.Controls.Add(this.btnRender);
       this.propsPanel.Controls.Add(this.chkInterpolate);
@@ -256,9 +265,19 @@ namespace RateRacerGUI
       this.propsPanel.Size = new System.Drawing.Size(240, 245);
       this.propsPanel.TabIndex = 2;
       // 
+      // btnStop
+      // 
+      this.btnStop.FlatStyle = System.Windows.Forms.FlatStyle.System;
+      this.btnStop.Location = new System.Drawing.Point(80, 8);
+      this.btnStop.Name = "btnStop";
+      this.btnStop.Size = new System.Drawing.Size(56, 23);
+      this.btnStop.TabIndex = 13;
+      this.btnStop.Text = "Stop!";
+      this.btnStop.Click += new System.EventHandler(this.btnStop_Click);
+      // 
       // chkAutoRender
       // 
-      this.chkAutoRender.Location = new System.Drawing.Point(80, 8);
+      this.chkAutoRender.Location = new System.Drawing.Point(144, 8);
       this.chkAutoRender.Name = "chkAutoRender";
       this.chkAutoRender.TabIndex = 12;
       this.chkAutoRender.Text = "Auto-Render!";
@@ -479,6 +498,7 @@ namespace RateRacerGUI
 
     private void MainForm_Load(object sender, System.EventArgs e)
     {
+      EnableRenderButtons();
       bmpControl1.setResolution( ref mRenderSize );
       bmpControl1.setZoom( mZoom );
       bmpControl1.setInterpolation( chkInterpolate.Checked );
@@ -508,6 +528,10 @@ namespace RateRacerGUI
           mAspectRatio = (double)mRenderSize.Width / (double)mRenderSize.Height;
         }
         bmpControl1.setResolution( ref mRenderSize );
+        if (chkAutoRender.Checked)
+        {
+          startRender();
+        }
       }
 
       if (zoom != mZoom)
@@ -538,14 +562,20 @@ namespace RateRacerGUI
     void startRender()
     {
       isRendering = true;
-      btnRender.Enabled = !chkAutoRender.Checked && !isRendering;
+      EnableRenderButtons();
       adjustRenderSize(mRenderSize, mZoom);
-      RateRacerEngine.render();
-
+      RateRacerEngine.startRendering();
       if (!chkAutoRender.Checked)
       {
         mTimer.Start();
       }
+      updateRenderStatus();
+    }
+
+    void stopRender()
+    {
+      mTimer.Stop();
+      RateRacerEngine.stopRendering();
     }
 
     private void mTimer_Tick(object sender, System.EventArgs e)
@@ -566,7 +596,7 @@ namespace RateRacerGUI
       bmpControl1.Refresh();
       updateRenderStatus();
       isRendering = false;
-      btnRender.Enabled = !chkAutoRender.Checked && !isRendering;
+      EnableRenderButtons();
     }
 
     bool updateRenderStatus()
@@ -574,16 +604,26 @@ namespace RateRacerGUI
       int percentage = bmpControl1.renderingPercentage();
       float timeSecs = bmpControl1.renderingTimeSeconds();
 
-      lblStatus.Text = "Rendering: " + percentage + "%" +
-        " Elapsed time: " + timeString(timeSecs);
-      lblStatus.Refresh();
+      if (percentage == 100)
+      {
+        lblStatus.Text = "Rendering: Done! " + timeString(timeSecs);
+      }
+      else if (!chkAutoRender.Checked)
+      {
+        lblStatus.Text = "Rendering: " + percentage + "% " + timeString(timeSecs);
+      }
+      else
+      {
+        lblStatus.Text = "Rendering...";
+      }
 
+      lblStatus.Refresh();
       return (percentage == 100);
     }
 
     private string timeString(float seconds)
     {
-      string timeStr = "";
+      string timeStr = "Elapsed time: ";
       if (seconds < 60)
       {
         timeStr += seconds.ToString("f02") + "s";
@@ -642,6 +682,13 @@ namespace RateRacerGUI
       cbHeight.Text = renderSize.Height.ToString();
       if (renderSize != mRenderSize)
       {
+        // Reset zoom if increasing resolution...
+        if (mZoom > 1.0 && (renderSize.Width > mRenderSize.Width ||
+                            renderSize.Height > mRenderSize.Height))
+        {
+          cbZoom.Text = "100";
+          updateZoom();
+        }
         //Console.WriteLine("Changing resolution...");
         adjustRenderSize(renderSize, mZoom);
         adjustPreviewSize();
@@ -745,7 +792,7 @@ namespace RateRacerGUI
       }
       catch (Exception) {}
 
-      cbZoom.Text = percentage.ToString();;
+      cbZoom.Text = percentage.ToString();
       float zoom = 0.01f * percentage;
       adjustRenderSize(mRenderSize, zoom);
     }
@@ -787,11 +834,17 @@ namespace RateRacerGUI
       glPreviewControl1.Invalidate();
     }
 
+    void EnableRenderButtons()
+    {
+      btnRender.Enabled = !chkAutoRender.Checked && !isRendering;
+      btnStop.Enabled   = !chkAutoRender.Checked && isRendering;
+    }
+
     private void chkAutoRender_CheckedChanged(object sender, System.EventArgs e)
     {
       if (this.Visible)
       {
-        btnRender.Enabled = !chkAutoRender.Checked && !isRendering;
+        EnableRenderButtons();
       }
       if (chkAutoRender.Checked)
       {
@@ -802,6 +855,11 @@ namespace RateRacerGUI
     private void btnRender_Click(object sender, System.EventArgs e)
     {
       startRender();
+    }
+
+    private void btnStop_Click(object sender, System.EventArgs e)
+    {
+      stopRender();
     }
 
   }

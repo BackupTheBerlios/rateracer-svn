@@ -206,8 +206,14 @@ namespace Gweronimo
 	{
 		//Control::OnPaint(e);
 
-		//SolidBrush *b = new SolidBrush( Color::Aqua );
-		//e->Graphics->FillRectangle(b, this->ClientRectangle);
+		//SolidBrush *b = new SolidBrush( Color::Red );
+    HatchBrush *b = new HatchBrush( //RateRacerEngine::mRenderProps->mHatch,
+      HatchStyle::SolidDiamond,
+      //RateRacerEngine::mRenderProps->mColor,
+      Color::LightCoral,
+      Color::White
+    );
+		e->Graphics->FillRectangle(b, this->ClientRectangle);
 
 		//if (mPixels != NULL)
 		//if (mBitmap != NULL)
