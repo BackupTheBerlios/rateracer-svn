@@ -11,3 +11,6 @@ RateRacer project log
 - Added light sources (point light and spherical light)
 - Added untested code for extracting texture nodes
 - Added extraction of triangles from untriangulated polygons
+- gweronimo: Checked in the rest of the RateRacer project.
+  It's still in an awful mess after the move to a .NET GUI.
+  I enabled SSE2 optimization, so it might not work (as is) on older machines.

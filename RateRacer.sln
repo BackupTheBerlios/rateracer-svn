@@ -11,6 +11,7 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RateRacerWrapper", "RateRacerWrapper\RateRacerWrapper.vcproj", "{EFF2F5A2-D926-4951-9EA2-2C1563B4E95C}"
 	ProjectSection(ProjectDependencies) = postProject
 		{EF4A6B81-336A-45FC-93E8-E0CA8A55A8DC} = {EF4A6B81-336A-45FC-93E8-E0CA8A55A8DC}
+		{7C57B6FA-27EC-4422-8ACC-59AC6EF8B7C2} = {7C57B6FA-27EC-4422-8ACC-59AC6EF8B7C2}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "chunkslib", "chunks\chunkslib.vcproj", "{7C57B6FA-27EC-4422-8ACC-59AC6EF8B7C2}"
