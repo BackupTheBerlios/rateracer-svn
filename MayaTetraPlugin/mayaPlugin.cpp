@@ -1,5 +1,5 @@
 // 
-// Tetra (.smesh) Export Plugin for Maya
+// TetGen / NetGen input-file (.smesh / .stl) Export Plugin for Maya
 //
 
 #define REQUIRE_IOSTREAM
@@ -17,6 +17,7 @@
 #include <maya/MFnPlugin.h>
 #pragma warning( default : 4100 )
 
+#include "stlPlugin.h"
 #include "tetraPlugin.h"
 #include "mayaPlugin.h"
 
@@ -44,6 +45,18 @@ __declspec( dllexport ) MStatus initializePlugin(MObject obj)
 	MFnPlugin plugin(obj, "Tetra Plugin for Maya", pluginVersion);
 	
 	status = plugin.registerFileTranslator(
+		"stlPlugin",
+		"stlPlugin.rgb",
+		stlPlugin::creator,
+		"stlPluginOptions", "",
+		true);
+
+	if (!status) { 
+	  printf( "error: %s\n", status.errorString( ).asChar( ) );
+	  lasterror = status;
+	}
+
+	status = plugin.registerFileTranslator(
 		"tetraPlugin",
 		"tetraPlugin.rgb",
 		tetraPlugin::creator,
@@ -70,6 +83,13 @@ __declspec( dllexport ) MStatus uninitializePlugin(MObject obj)
 
 	MFnPlugin plugin(obj);
 	status = plugin.deregisterFileTranslator("tetraPlugin");
+
+	if (!status) { 
+	  printf( "error: %s\n", status.errorString( ).asChar( ) );
+	  lasterror = status;
+	}
+
+	status = plugin.deregisterFileTranslator("stlPlugin");
 
 	if (!status) { 
 	  printf( "error: %s\n", status.errorString( ).asChar( ) );

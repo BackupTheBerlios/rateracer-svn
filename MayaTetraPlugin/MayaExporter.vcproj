@@ -130,6 +130,12 @@
 			RelativePath=".\mayaPlugin.h">
 		</File>
 		<File
+			RelativePath=".\stlPlugin.cpp">
+		</File>
+		<File
+			RelativePath=".\stlPlugin.h">
+		</File>
+		<File
 			RelativePath=".\tetraPlugin.cpp">
 		</File>
 		<File
