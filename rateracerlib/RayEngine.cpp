@@ -20,10 +20,12 @@ RayEngine::RayEngine()
 
   mUsePhotonMap = true;
   mMaxNumPhotons = 100000;
-  mNumPhotons = 100000;
+  // Use an odd number here (otherwise one photon will be unused)
+  mNumPhotons = 100000 - 1;
   mPhotonMap = new Photon_map(mMaxNumPhotons);
   mEstimateMaxDist = 10.0f;
   mEstimateNPhotons = 100;
+  mPhotonScaleFactor = 100.0f;
 }
 
 RayEngine::~RayEngine()
@@ -157,11 +159,18 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 	// Indirect light...
 	if (material->refract == 0.0f) //allowDiffuse
 	{
-		if (!mUsePathTracing)
+		if (!mUsePathTracing && !mUsePhotonMap)
 		{
 			// Add in global ambient light
 			color += compMul(matColor, mScene->mGlobalAmbientLight);
 		}
+    else if (mUsePhotonMap /*&& level > 0*/)
+    {
+      Vec3 irrad(0,0,0);
+      mPhotonMap->irradiance_estimate( irrad.v_, p.v_, N.v_, 
+        mEstimateMaxDist, mEstimateNPhotons );
+      color += compMul(mPhotonScaleFactor * irrad, matColor);
+    }
 		else if (level < 3)
 		{
 			// if (ray0.numDiffBounces = 0)
@@ -453,11 +462,13 @@ Shape* RayEngine::findHit(Ray& ray0, Shape *excludeObject)
 	if (mScene->mUseGrid) {
 		hitObject = mScene->mGrid->findHitInGrid(ray0, excludeObject);
 		// TODO: kludge for unbound ground plane
+    /*
 		float t = -ray0.ori[1] / ray0.dir[1];
 		if (t > cEpsilon && t < ray0.tHit) {
 			ray0.tHit = t;
 			hitObject = mScene->mShapes[mScene->mShapes.size()-1];
 		}
+    */
     return hitObject;
 	}
 
@@ -646,37 +657,37 @@ Vec3 RayEngine::InstantTraceRay(Ray& ray0, int level, Vec3& lpos)
   //return (lpos - p).length() < 0.5f ? Vec3(1,1,1) : Vec3(0,0,0);
 }
 
-void RayEngine::ShootPhotons(int numPhotons)
+void RayEngine::ShootPhotons()
 {
   if (mPhotonMap->get_num_photons() > 0) return;
 
   printf("\nShooting photons...");
 
   Vec3 lpos = mScene->mLights[0]->position;
-  Vec3 LDir = (Vec3(0,0,0) - lpos).normalize();
+  Vec3 LDir = Vec3(0,-1,0);//(Vec3(0,0,0) - lpos).normalize();
+  float LdotLimit = 0.5f;
   Vec3 vec;
   float NdotVec;
 
   Vec3 power(1,1,1);
 
   //dbgBeginStoringRays();
-
-  while (mPhotonMap->get_num_photons() < numPhotons)
+  while (mPhotonMap->get_num_photons() < mNumPhotons)
   {
     rndUnitVec(vec);
     NdotVec = dot(LDir, vec);
     if (NdotVec < 0) { vec = -vec; NdotVec = -NdotVec; }
-    if (NdotVec < 0.5f) continue;
+    if (NdotVec < LdotLimit) continue;
 
     Ray rayPhoton(lpos, vec); rayPhoton.color.assign(0.5f,0.5f,0.25f);
     //rayPath.offset(cEpsilon, N);
     //Vec3 colorPath = TraceRay(rayPath, level+1);
 
-    TracePhotonRay(rayPhoton, power);
+    TracePhotonRay(rayPhoton, power, 0);
   }
   //dbgEndStoringRays();
 
-  mPhotonMap->scale_photon_power( 1.0f / float(numPhotons) );
+  mPhotonMap->scale_photon_power( 1.0f / float(mNumPhotons) );
   mPhotonMap->balance();
 
   printf("done! (%d photons)\n", mPhotonMap->get_num_photons());
@@ -686,8 +697,11 @@ void RayEngine::ShootPhotons(int numPhotons)
   printf("kd-tree bounds: %f %f %f\n", bounds[0], bounds[1], bounds[2]);
 }
 
-void RayEngine::TracePhotonRay(Ray& rayPhoton, Vec3 power)
+void RayEngine::TracePhotonRay(Ray& rayPhoton, Vec3 power, int level)
 {
+  if (mPhotonMap->get_num_photons() == mNumPhotons) return;
+  if (level == 4) return;
+
   Shape *hitObject = findHit(rayPhoton);
   if (hitObject == NULL) return;
   //dbgStoreRay(rayPhoton);
@@ -710,9 +724,21 @@ void RayEngine::TracePhotonRay(Ray& rayPhoton, Vec3 power)
 
   const Material *material = hitObject->material;
 
-  //if (hitObject->material->reflect > 0.0f) continue;
+  if (hitObject->material->reflect > 0.0f)
+  {
+    Vec3 R = 2*NdotL*N - L; R.normalize();
 
-  if (material->refract > 0.0f)
+    Ray rayRefl(p, R);
+    rayRefl.offset(cEpsilon, N);
+
+    //Vec2 uv = hitObject->getUV(p);
+    //Vec3 matColor = material->getColor(p, uv);
+
+    power = compMul(material->specColor, power);
+
+    TracePhotonRay(rayRefl, power, level+1);
+  }
+  else if (material->refract > 0.0f)
   {
     bool doRefraction = true;
     Vec3 T;
@@ -760,13 +786,27 @@ void RayEngine::TracePhotonRay(Ray& rayPhoton, Vec3 power)
         // Should be using Beer's law...
         power = compMul(matColor, power);
 
-        TracePhotonRay(rayRefr, power);//, level+1);
+        TracePhotonRay(rayRefr, power * NdotL, level+1);
       }
     }
   }
   else
   {
     mPhotonMap->store(power.v_, p.v_, rayPhoton.dir.v_);
+
+    Vec3 U, V, vec0, vec;
+    createONBasis(U,V,N);
+    rndImplicitCosVec(vec0);
+    vec[0] = vec0[0] * U[0] + vec0[1] * V[0] + vec0[2] * N[0];
+    vec[1] = vec0[0] * U[1] + vec0[1] * V[1] + vec0[2] * N[1];
+    vec[2] = vec0[0] * U[2] + vec0[1] * V[2] + vec0[2] * N[2];
+    Ray rayPath(p, vec); //rayPath.color.assign(0.5f,0.5f,0.25f);
+    rayPath.offset(cEpsilon, N);
+
+    Vec2 uv = hitObject->getUV(p);
+    Vec3 matColor = material->getColor(p, uv);
+
+    TracePhotonRay(rayPath, compMul(power, matColor), level+1);
   }
 }
 
@@ -783,22 +823,6 @@ Vec3 RayEngine::PhotonMapTraceRay(Ray& ray0, int level)
   {
     Vec3 p = ray0.hitPoint();
     Vec3 N = hitObject->getNormal(p);
-    mPhotonMap->irradiance_estimate( irrad.v_, p.v_, N.v_, 
-      mEstimateMaxDist, mEstimateNPhotons );
-
-    /*
-    Vec3 photonpos;
-    Vec3 irrad2
-    for (int n = 1; n <= mPhotonMap->get_num_photons(); n++)
-    {
-      photonpos.copyFrom( mPhotonMap->get_photons()[n].pos );
-      //irrad2 += Vec3(1,1,1) / (1.0f+(photonpos - p).lengthSquared());
-      if ((photonpos - p).length() < 0.1f) irrad2.assign(1,1,1);
-    }
-    irrad = compMul(irrad, Vec3(1,0,0));
-    //irrad2 *= 1.0f / mPhotonMap->stored_photons;
-    irrad2 = compMul(irrad2, Vec3(0,1,0));
-    */
 
     const Material *material = hitObject->material;
 
@@ -819,9 +843,21 @@ Vec3 RayEngine::PhotonMapTraceRay(Ray& ray0, int level)
       NdotL = 0; // Clamp to 90 degrees between N and L...
     }
 
-    //if (hitObject->material->reflect > 0.0f) continue;
+    if (hitObject->material->reflect > 0.0f)
+    {
+      Vec3 R = 2*NdotL*N - L; R.normalize();
 
-    if (material->refract > 0.0f)
+      Ray rayRefl(p, R);
+      rayRefl.offset(cEpsilon, N);
+
+      //Vec2 uv = hitObject->getUV(p);
+      //Vec3 matColor = material->getColor(p, uv);
+
+      color1 = PhotonMapTraceRay(rayRefl, level+1);
+
+      color1 = compMul(material->specColor, color1);
+    }
+    else if (material->refract > 0.0f)
     {
       bool doRefraction = true;
       Vec3 T;
@@ -872,7 +908,24 @@ Vec3 RayEngine::PhotonMapTraceRay(Ray& ray0, int level)
     }
     else
     {
-      color1 = compMul(100.0f * irrad, matColor);
+      mPhotonMap->irradiance_estimate( irrad.v_, p.v_, N.v_, 
+        mEstimateMaxDist, mEstimateNPhotons );
+
+      /*
+      Vec3 photonpos;
+      Vec3 irrad2
+      for (int n = 1; n <= mPhotonMap->get_num_photons(); n++)
+      {
+      photonpos.copyFrom( mPhotonMap->get_photons()[n].pos );
+      //irrad2 += Vec3(1,1,1) / (1.0f+(photonpos - p).lengthSquared());
+      if ((photonpos - p).length() < 0.1f) irrad2.assign(1,1,1);
+      }
+      irrad = compMul(irrad, Vec3(1,0,0));
+      //irrad2 *= 1.0f / mPhotonMap->stored_photons;
+      irrad2 = compMul(irrad2, Vec3(0,1,0));
+      */
+
+      color1 = compMul(mPhotonScaleFactor * irrad, matColor);
     }
   }
 

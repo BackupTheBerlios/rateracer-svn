@@ -57,8 +57,9 @@ public:
   int mNumPhotons;
   float mEstimateMaxDist;
   int mEstimateNPhotons;
-  void ShootPhotons(int numPhotons);
-  void TracePhotonRay(Ray& rayPhoton, Vec3 power);
+  float mPhotonScaleFactor;
+  void ShootPhotons();
+  void TracePhotonRay(Ray& rayPhoton, Vec3 power, int level);
   Vec3 PhotonMapTraceRay(Ray& ray0, int level);
   void dbgDrawPhotons();
   Photon_map *mPhotonMap;

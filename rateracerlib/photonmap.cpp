@@ -120,6 +120,7 @@ void Photon_map :: irradiance_estimate(
     float NdotL = -(pdir[0]*normal[0]+pdir[1]*normal[1]+pdir[2]*normal[2]);
     if ( NdotL > 0.0f )
     {
+      //NdotL = 1.0f;
       irrad[0] += NdotL * p->power[0];
       irrad[1] += NdotL * p->power[1];
       irrad[2] += NdotL * p->power[2];

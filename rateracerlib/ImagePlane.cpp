@@ -202,10 +202,7 @@ void ImagePlane::TraceScene()
 
   if (mRayEngine->mUsePhotonMap)
   {
-    // Use an odd number here (otherwise one photon will be unused)
-    const cNumPhotons = mRayEngine->mNumPhotons;
-
-    mRayEngine->ShootPhotons(cNumPhotons);
+    mRayEngine->ShootPhotons();
 
     //float lightI = 1;
     //mRayEngine->mScene->mAttC = lightI;
@@ -213,10 +210,10 @@ void ImagePlane::TraceScene()
     //mRayEngine->mScene->mAttQ = 1;//0.5;
     //mRayEngine->mScene->mUseAttenuation = false;
 
-    mRayEngine->mUseFresnel = false;
+    //mRayEngine->mUseFresnel = false;
     mRayEngine->mScene->mUseGrid = true;
     mUseAntiAlias = false;
-
+    /*
     idx = 0;
     for (y = 0, py = y0; y < mRenderHeight; y++, py += pixelSize) {
       for (x = 0, px = x0; x < mRenderWidth; x++, px += pixelSize) {
@@ -242,6 +239,7 @@ void ImagePlane::TraceScene()
       }
     }
     return;
+    */
   }
 
 #if 0

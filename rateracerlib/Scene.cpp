@@ -60,8 +60,8 @@ void Scene::InitScene()
 	mAttL = 0;
 	mAttQ = 1;
 
-  src = new LightSource(Vec3(0,10,0), Vec3(lightI, lightI, lightI));
-  //src = new LightSource(Vec3(1,8,8), Vec3(lightI, lightI, lightI));
+  //src = new LightSource(Vec3(1,100,8), Vec3(lightI, lightI, lightI));
+  src = new LightSource(Vec3(0,7,0), Vec3(lightI, lightI, lightI));
 	//src = new LightSource(10*Vec3(1,8,-8), Vec3(lightI, lightI, lightI));
 	mLights.push_back(src);
 
@@ -129,9 +129,10 @@ void Scene::InitScene()
 
 // Load some mesh objects
 
-#if 0
-  model = new Model("models/test.chunks");
+#if 1
+  //model = new Model("models/test.chunks");
   //model = new Model("models/lucy.chunks");
+  model = new Model("models/causticRing.chunks");
   MaterialMap::iterator m = model->mMaterialMap.begin();
   for(; m != model->mMaterialMap.end(); m++)
   {
@@ -141,9 +142,20 @@ void Scene::InitScene()
   }
   mat = model->mMaterialMap["lambert1"];
   if (mat != NULL) {
-    mat->diffColor.assign(0.7f,0.7f,0.7f);
-    mat->shininess = 500.0f;
-    mat->fresnelAmountAtNormalIncidence = cFresnelGlass;
+    //mat->diffColor.assign(1,0.9f,0.8f);
+    mat->diffColor.assign(0.5f,0.5f,0.5f);
+    mat->shininess = 0.0f;
+    //mat->fresnelAmountAtNormalIncidence = cFresnelGlass;
+    //mat->setRefractionIndex(cRefrAir, cRefrGlass);
+  }
+  mat = model->mMaterialMap["metal"];
+  if (mat != NULL) {
+    mat->diffColor.assign(1,0.8f,0.2f);
+    //mat->diffColor.assign(1,1,1);
+    mat->specColor.assign(1,0.8f,0.2f);
+    mat->shininess = 1000.0f;
+    mat->fresnelAmountAtNormalIncidence = 0.8f;
+    mat->reflect = 0.5f;
   }
   //mShapes.push_back(obj);
   model->addToShapeList(mShapes);
@@ -201,6 +213,11 @@ void Scene::InitScene()
     mat->shininess = 1000.0f;
     mat->fresnelAmountAtNormalIncidence = 0.8f;
     mat->reflect = 0.5f;
+  }
+  mat = model->mMaterialMap["church"];
+  if (mat != NULL) {
+    mat->diffColor.assign(1,1,1);
+    mat->shininess = 0;
   }
 	//mShapes.push_back(obj);
   model->addToShapeList(mShapes);
@@ -304,7 +321,7 @@ void Scene::InitScene()
 	mShapes.push_back(obj);
 #endif
 
-#if 1
+#if 0
 	// Four Spheres
 	//Vec3 pos(3,0,3);
 	Vec3 pos(0,0,0);
@@ -491,7 +508,7 @@ void Scene::InitScene()
 	mShapes.push_back(obj);
 #endif
 
-#if 1
+#if 0
 	// Floor disc
 	obj = new Disc( Vec3(0,0,0), 0, 15, Vec3(0,1,0));
 	obj->material = mat = new Material();
@@ -647,7 +664,9 @@ void Scene::drawScenePreview()
 
 void Scene::prepareGrid()
 {
-	mGrid = new Grid(50, mBoundingBox.pp[0], mBoundingBox.pp[1]);
+  Vec3 eps(cEpsilon,cEpsilon,cEpsilon);
+
+	mGrid = new Grid(50, mBoundingBox.pp[0]-eps, mBoundingBox.pp[1]+eps);
 	
 	for (int i = 0; i < mNumShapes; i++) {
 		mShapes[i]->rasterize(mGrid);

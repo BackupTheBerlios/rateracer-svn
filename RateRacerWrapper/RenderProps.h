@@ -39,10 +39,12 @@ namespace Gweronimo
     STD_PROPERTY(bool, UseGrid, mScene->mUseGrid)
 
 		STD_PROPERTY(bool, UsePathtracing, mRayEngine->mUsePathTracing)
+    STD_PROPERTY(bool, UseFresnel, mRayEngine->mUseFresnel)
 
     STD_PROPERTY(bool, UsePhotonMap, mRayEngine->mUsePhotonMap)
     STD_PROPERTY(float, EstimateRadius, mRayEngine->mEstimateMaxDist)
     STD_PROPERTY(int, EstimateNPhotons, mRayEngine->mEstimateNPhotons)
+    STD_PROPERTY(float, PhotonScaleFactor, mRayEngine->mPhotonScaleFactor);
 
 		/*
 		case 'D' : mRayEngine->mUseAttenuation = !mRayEngine->mUseAttenuation; break;

@@ -55,29 +55,8 @@ namespace RateRacerCore
 			mRenderProps->mImagePlane = mImagePlane;
       mRenderProps->mScene      = mScene;
 
-      Material *mat = mScene->getModelMaterial(0, "lambert1");
-      //Material *mat = mScene->getModelMaterial(0, "photo");
-      if (mat != NULL)
-      {
-        //Console::WriteLine(L"Setting texture");
-        Bitmap *bmp = new Bitmap(L"models/textures/Earth.bmp");
-        //Bitmap *bmp = new Bitmap(L"models/textures/photo.bmp");
-        BitmapData* bmpData = bmp->LockBits(
-          System::Drawing::Rectangle(0,0,bmp->Width, bmp->Height),
-          //System::Drawing::Rectangle(10,10, 1,1),
-          ImageLockMode::ReadOnly,
-          //ImageLockMode::ReadWrite,
-          PixelFormat::Format32bppArgb);
-
-        Texture *tex = new Texture();
-        tex->createFromBitmapPixels(
-          bmpData->Width, bmpData->Height,
-          (UINT*)bmpData->Scan0.ToPointer());
-
-        bmp->UnlockBits(bmpData);
-
-        mat->mTexture = tex;
-      }
+      assignTextureToMaterial("photo", L"models/textures/photo.png");
+      assignTextureToMaterial("church", L"models/textures/mhk.bmp");
 		}
 
 		static void finish()
@@ -98,6 +77,28 @@ namespace RateRacerCore
 
 			__crt_dll_terminate();
 		}
+
+    static void assignTextureToMaterial(const char* materialName, const WCHAR *filename)
+    {
+      Material *mat = mScene->getModelMaterial(0, materialName);
+      if (mat != NULL)
+      {
+        Bitmap *bmp = new Bitmap(filename);
+        BitmapData* bmpData = bmp->LockBits(
+          System::Drawing::Rectangle(0,0,bmp->Width, bmp->Height),
+          ImageLockMode::ReadOnly,
+          PixelFormat::Format32bppArgb);
+
+        Texture *tex = new Texture();
+        tex->createFromBitmapPixels(
+          bmpData->Width, bmpData->Height,
+          (UINT*)bmpData->Scan0.ToPointer());
+
+        bmp->UnlockBits(bmpData);
+
+        mat->mTexture = tex;
+      }
+    }
 
 		static void startRendering()
 		{
