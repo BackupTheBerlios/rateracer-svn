@@ -37,6 +37,7 @@ public:
 	bool mUseGrid;
 	bool mDrawGrid;
 
+  std::vector<LightSource*>	mPhotonLights;
 	std::vector<LightSource*>	mLights;
 	std::vector<Shape*> mShapes;
 	int mNumShapes;

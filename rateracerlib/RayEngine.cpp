@@ -126,7 +126,7 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 	// TODO: no diffuse if fresnelTerm > 99% ???
 
 	float fresnelTerm = 0;
-	if (mUseFresnel)
+	if (mUseFresnel && !hitInsideOfObject)
 	{
 		// TODO: add material->useFresnel, possibly add fresnel exponent
 		// dielectrics (plastic, glass, water) refr.index n = ca 1.5
@@ -322,7 +322,7 @@ Vec3 RayEngine::handleRefraction(const Material* material, Ray& ray0, float Ndot
   bool doRefraction = true;
   Vec3 T;
 
-  if (material->refract == 1.0f && material->refractInv == 1.0f)
+  if (material->refract == 1.0f && material->refractOutside == 1.0f)
   {
     // Special case: non-altered refraction/transmission ray...
     T = ray0.dir;
@@ -330,8 +330,8 @@ Vec3 RayEngine::handleRefraction(const Material* material, Ray& ray0, float Ndot
   else
   {
     //float ni = 1;	float nr = 1; float n = ni / nr;
-    float n = material->refract;
-    if (hitInsideOfObject) n = material->refractInv;
+    float n = material->refractOutside / material->refract;
+    if (hitInsideOfObject) n = material->refract / material->refractOutside;
 
     float w = n * NdotV;
     float radical = 1 + (w - n)*(w + n);
@@ -565,8 +565,8 @@ void RayEngine::InstantRadiosity(int N, float rho)
 						hitInsideOfObject = true;
 						normal = -normal;
 					}
-					float n = hitObject->material->refract;
-					if (hitInsideOfObject) n = hitObject->material->refractInv;
+          float n = material->refractOutside / material->refract;
+          if (hitInsideOfObject) n = material->refract / material->refractOutside;
 					float w = n * posDot(normal,-r.dir);
 					float radical = 1 + (w - n)*(w + n);
 					if (radical < 0) {
@@ -663,7 +663,7 @@ void RayEngine::ShootPhotons()
 
   printf("\nShooting photons...");
 
-  Vec3 lpos = mScene->mLights[0]->position;
+  Vec3 lpos = mScene->mPhotonLights[0]->position;
   Vec3 LDir = Vec3(0,-1,0);//(Vec3(0,0,0) - lpos).normalize();
   float LdotLimit = 0.5f;
   Vec3 vec;
@@ -674,6 +674,11 @@ void RayEngine::ShootPhotons()
   //dbgBeginStoringRays();
   while (mPhotonMap->get_num_photons() < mNumPhotons)
   {
+    if (nrand() < 0.5f)
+      lpos = mScene->mPhotonLights[0]->position;
+    else
+      lpos = mScene->mPhotonLights[1]->position;
+
     rndUnitVec(vec);
     NdotVec = dot(LDir, vec);
     if (NdotVec < 0) { vec = -vec; NdotVec = -NdotVec; }
@@ -743,8 +748,8 @@ void RayEngine::TracePhotonRay(Ray& rayPhoton, Vec3 power, int level)
     bool doRefraction = true;
     Vec3 T;
     //float ni = 1;	float nr = 1; float n = ni / nr;
-    float n = material->refract;
-    if (hitInsideOfObject) n = material->refractInv;
+    float n = material->refractOutside / material->refract;
+    if (hitInsideOfObject) n = material->refract / material->refractOutside;
 
     float w = n * NdotL;
     float radical = 1 + (w - n)*(w + n);
@@ -862,8 +867,8 @@ Vec3 RayEngine::PhotonMapTraceRay(Ray& ray0, int level)
       bool doRefraction = true;
       Vec3 T;
       //float ni = 1;	float nr = 1; float n = ni / nr;
-      float n = material->refract;
-      if (hitInsideOfObject) n = material->refractInv;
+      float n = material->refractOutside / material->refract;
+      if (hitInsideOfObject) n = material->refract / material->refractOutside;
 
       float w = n * NdotL;
       float radical = 1 + (w - n)*(w + n);

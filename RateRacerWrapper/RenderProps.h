@@ -46,6 +46,9 @@ namespace Gweronimo
     STD_PROPERTY(int, EstimateNPhotons, mRayEngine->mEstimateNPhotons)
     STD_PROPERTY(float, PhotonScaleFactor, mRayEngine->mPhotonScaleFactor);
 
+    STD_PROPERTY(bool, UseGammaCorrection, mImagePlane->mUseGammaCorrection)
+    STD_PROPERTY(bool, UseAntiAlias, mImagePlane->mUseAntiAlias)
+
 		/*
 		case 'D' : mRayEngine->mUseAttenuation = !mRayEngine->mUseAttenuation; break;
 		case 'F' : mRayEngine->mUseFresnel = !mRayEngine->mUseFresnel; break;

@@ -36,7 +36,7 @@ public:
 		anisotropy = AnisotropyNone;
 		anisotropyPole.assign(0,1,0);
 		fresnelAmountAtNormalIncidence = 0;
-		reflect = 0; refract = 0; refractInv = 0;
+		reflect = 0; refract = 0; refractOutside = 0;
 		emitIntensity = 0.0f;
 		//lambdaShift = 0.0f;
 
@@ -52,8 +52,8 @@ public:
 
 	virtual void setRefractionIndex(float incident, float transmitted)
 	{
-		refract =	incident / transmitted;
-		refractInv = 1.0f / refract;
+		refract =	transmitted;//incident / transmitted;
+		refractOutside = incident;
 	}
 
   /*
@@ -209,7 +209,7 @@ public:
 	float fresnelAmountAtNormalIncidence;
 	float reflect;
 	float refract;
-	float refractInv;
+	float refractOutside;
 	//float lambdaShift;
 
 	//corona::Image* texture;

@@ -23,7 +23,7 @@ ImagePlane::ImagePlane()
 
 	//mDrawRealtime = false;
 
-	mUseGammaCorrection = true;
+	mUseGammaCorrection = false;
 	mUseAntiAlias = true;
 
 	mRelativeAperture = 0.0f;//0.1f;//0.10f;
@@ -212,7 +212,7 @@ void ImagePlane::TraceScene()
 
     //mRayEngine->mUseFresnel = false;
     mRayEngine->mScene->mUseGrid = true;
-    mUseAntiAlias = false;
+    //mUseAntiAlias = false;
     /*
     idx = 0;
     for (y = 0, py = y0; y < mRenderHeight; y++, py += pixelSize) {
@@ -446,7 +446,7 @@ float ImagePlane::renderingTimeSeconds()
 
 void ImagePlane::PostProcess()
 {
-	const float cInvGamma = 1.0f / 2.2f;
+	const float cInvGamma = 1.0f / 2.0f;//2.2f;
 
 	int x, y, idx = 0;
 	// TODO: fix border handling etc, test alternating rotated quincunx methods
@@ -722,7 +722,7 @@ void ImagePlane::setAntiAliasing(bool useAntialiasing)
 	if (mRenderThreadPercentageDone == 100)
 	{
 		mCritSecPixels.lock();
-		mUseAntiAlias = !useAntialiasing;
+		mUseAntiAlias = useAntialiasing;
 		PostProcess();
 		mCritSecPixels.unlock();
 	}

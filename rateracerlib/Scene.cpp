@@ -60,10 +60,29 @@ void Scene::InitScene()
 	mAttL = 0;
 	mAttQ = 1;
 
-  //src = new LightSource(Vec3(1,100,8), Vec3(lightI, lightI, lightI));
+  //src = new LightSource(Vec3(-7,5,0), Vec3(lightI, lightI, lightI));
+  //mPhotonLights.push_back(src);
+
+  //src = new LightSource(Vec3(10,30,0), Vec3(5*lightI, 5*lightI, 5*lightI));
+  //src = new LightSource(Vec3(0,50,30), Vec3(5*lightI, 5*lightI, 5*lightI));
+  //src = new LightSource(Vec3(8,19,0), Vec3(5*lightI, 5*lightI, 5*lightI));
+  //mPhotonLights.push_back(src);
+
+  //src = new LightSource(Vec3(1,50,8), Vec3(lightI, lightI, lightI));
   src = new LightSource(Vec3(0,7,0), Vec3(lightI, lightI, lightI));
 	//src = new LightSource(10*Vec3(1,8,-8), Vec3(lightI, lightI, lightI));
-	mLights.push_back(src);
+	mPhotonLights.push_back(src);
+  mLights.push_back(src);
+
+  //src = new LightSource(Vec3(-25,100,25), Vec3(lightI, lightI, lightI));
+  //mLights.push_back(src);
+
+  /*float r = 40, a = 0, i = lightI / 12.0f;
+  for (int n = 0; n < 12; n++) {
+    src = new LightSource(Vec3(r*cosf(a),100,r*sinf(a)), Vec3(i,i,i));
+    mLights.push_back(src);
+    a += MathConstants::PI2 / 12.0f;
+  }*/
 
 	//src = new LightSource(Vec3(8,8,8), Vec3(lightI, 0, 0));
 	//mLights.push_back(src);
@@ -218,6 +237,22 @@ void Scene::InitScene()
   if (mat != NULL) {
     mat->diffColor.assign(1,1,1);
     mat->shininess = 0;
+  }
+  mat = model->mMaterialMap["rose"];
+  if (mat != NULL) {
+    mat->diffColor.assign(0.8f,0.15f,0.11f);
+    mat->shininess = 0;
+  }
+  mat = model->mMaterialMap["stem"];
+  if (mat != NULL) {
+    mat->diffColor.assign(0.0f,0.56f,0.20f);
+    mat->shininess = 0;
+  }
+  mat = model->mMaterialMap["marble"];
+  if (mat != NULL) {
+    mat->diffColor.assign(1.00f,0.95f,0.90f);
+    mat->shininess = 50.0f;
+    mat->fresnelAmountAtNormalIncidence = cFresnelGlass;
   }
 	//mShapes.push_back(obj);
   model->addToShapeList(mShapes);
