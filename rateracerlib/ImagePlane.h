@@ -6,8 +6,6 @@
 
 #pragma comment(lib,"winmm.lib")
 
-//#include "testlab/TestLabWnd.h"
-
 #include <vector>
 
 #include "Synchronization.h"
@@ -34,36 +32,25 @@ struct FatPixel
 	float zHitDepth;
 };
 
-class TraceWnd //: public TestLabWnd
+class ImagePlane
 {
-// Construction
 public:
-	TraceWnd();
-	virtual ~TraceWnd();
+	ImagePlane();
+	virtual ~ImagePlane();
 
 //protected:
 public:
-	void onChar(UINT nChar, UINT nRepCnt, UINT nFlags);
-	bool onCommand(UINT id, UINT ctrlNotifyCode, LONG_PTR pCtrl);
+	//void onChar(UINT nChar, UINT nRepCnt, UINT nFlags);
+	//bool onCommand(UINT id, UINT ctrlNotifyCode, LONG_PTR pCtrl);
 
-	void onMouseButton(int btn, int event, UINT flags, POINTS point);
-	void onMouseWheel(UINT nFlags, short zDelta, POINTS pt);
-	void onMouseMove(UINT nFlags, POINTS point);
-
-	virtual void SetupOpenGL();
-	//virtual bool PreRenderScene();
+	virtual void Init();
 	virtual void RenderScene(int mWindowWidth, int mWindowHeight);
-	//virtual bool PostRenderScene();
-	virtual void ShutdownOpenGL();
+	virtual void Shutdown();
 
 	void TraceScene();
 	void PostProcess();
 
-	void drawPreview(int orix, int oriy, int sizex, int sizey);
-
 	void saveImage(const char *filename = NULL);
-
-	void drawCoordSysAxes();
 
 	void DrawRandomDistribution();
 

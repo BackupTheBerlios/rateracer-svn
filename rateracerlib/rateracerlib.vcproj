@@ -185,6 +185,12 @@
 			RelativePath=".\DebugDraw.h">
 		</File>
 		<File
+			RelativePath=".\ImagePlane.cpp">
+		</File>
+		<File
+			RelativePath=".\ImagePlane.h">
+		</File>
+		<File
 			RelativePath=".\LightSource.h">
 		</File>
 		<File
@@ -210,12 +216,6 @@
 		</File>
 		<File
 			RelativePath=".\Stratification.h">
-		</File>
-		<File
-			RelativePath=".\TraceWnd.cpp">
-		</File>
-		<File
-			RelativePath=".\TraceWnd.h">
 		</File>
 	</Files>
 	<Globals>

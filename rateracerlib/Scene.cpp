@@ -1,4 +1,4 @@
-#include "TraceWnd.h"
+#include "ImagePlane.h"
 
 #include "LightSource.h"
 

@@ -10,7 +10,7 @@
 #include "rateracerlib/rateracerlib.h"
 #include "rateracerlib/CameraControl.h"
 #include "rateracerlib/RayEngine.h"
-#include "rateracerlib/TraceWnd.h"
+#include "rateracerlib/ImagePlane.h"
 
 using namespace System;
 
@@ -30,14 +30,14 @@ namespace RateRacerCore
 			mCamControl = new CameraControl();
 			mRayEngine = new RayEngine();
 			mRayEngine->init();
-			mTraceWnd = new TraceWnd();
-			mTraceWnd->mCamControl = mCamControl;
-			mTraceWnd->mRayEngine = mRayEngine;
+			mImagePlane = new ImagePlane();
+			mImagePlane->mCamControl = mCamControl;
+			mImagePlane->mRayEngine = mRayEngine;
 		}
 
 		static void finish()
 		{
-			delete mTraceWnd;
+			delete mImagePlane;
 			mRayEngine->shutdown();
 			delete mRayEngine;
 			delete mCamControl;
@@ -47,12 +47,12 @@ namespace RateRacerCore
 
 		static void render()
 		{
-			mTraceWnd->SetRenderThreadRedraw(true);
+			mImagePlane->SetRenderThreadRedraw(true);
 		}
 
 		static CameraControl* mCamControl;
 		static RayEngine *mRayEngine;
-		static TraceWnd *mTraceWnd;
+		static ImagePlane *mImagePlane;
 	};
 }
 

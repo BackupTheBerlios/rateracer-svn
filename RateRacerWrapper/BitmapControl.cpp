@@ -124,7 +124,7 @@ namespace Gweronimo
 			//::StretchDIBits(realHDC, 0,0, Width, Height,
 			//								0,0, 100,100, mPixels, mBMI, DIB_RGB_COLORS, SRCCOPY);
 
-			TraceWnd *pTW = RateRacerEngine::mTraceWnd;
+			ImagePlane *pTW = RateRacerEngine::mImagePlane;
 			if (pTW->mPixels != NULL)
 				updateGdiPlusBitmap(pTW->mPixels, pTW->mRenderWidth, pTW->mRenderHeight);
 

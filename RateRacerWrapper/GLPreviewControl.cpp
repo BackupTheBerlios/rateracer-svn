@@ -120,12 +120,12 @@ namespace Gweronimo
 
 	void GLPreviewControl::InitGL()
 	{
-		RateRacerEngine::mTraceWnd->SetupOpenGL();
+		RateRacerEngine::mImagePlane->Init();
 	}
 
 	void GLPreviewControl::FinishGL()
 	{
-		RateRacerEngine::mTraceWnd->ShutdownOpenGL();
+		RateRacerEngine::mImagePlane->Shutdown();
 	}
 
 	void GLPreviewControl::PaintGL()
@@ -162,7 +162,7 @@ namespace Gweronimo
 
 		RateRacerEngine::mRayEngine->drawScenePreview();
 
-		RateRacerEngine::mTraceWnd->RenderScene(Width, Height);
+		RateRacerEngine::mImagePlane->RenderScene(Width, Height);
 	}
 
 } // namespace

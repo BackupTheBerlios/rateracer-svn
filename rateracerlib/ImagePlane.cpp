@@ -32,8 +32,7 @@ TODO:
 
 #include <io.h> // For _findfirst() etc
 
-//#include "mainlib/GLWindow.h"
-#include "TraceWnd.h"
+#include "ImagePlane.h"
 
 #include "mathlib.h"
 #include "Stratification.h"
@@ -48,7 +47,7 @@ static char THIS_FILE[] = __FILE__;
 #endif
 */
 
-TraceWnd::TraceWnd()
+ImagePlane::ImagePlane()
 {
 	//mShowWindowInitially = SW_SHOWMAXIMIZED;
 
@@ -86,19 +85,19 @@ TraceWnd::TraceWnd()
 	mRenderThreadRedraw = false;
 }
 
-TraceWnd::~TraceWnd()
+ImagePlane::~ImagePlane()
 {
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
-/*static*/ DWORD WINAPI TraceWnd::ThreadFunc(LPVOID param)
+/*static*/ DWORD WINAPI ImagePlane::ThreadFunc(LPVOID param)
 {
-	((TraceWnd *)param)->RenderThreadEntryPoint();
+	((ImagePlane *)param)->RenderThreadEntryPoint();
 	return 0;
 }
 
-void TraceWnd::RenderThreadEntryPoint()
+void ImagePlane::RenderThreadEntryPoint()
 {
 	SetRenderThreadExit(false);
 
@@ -125,25 +124,25 @@ void TraceWnd::RenderThreadEntryPoint()
 	}
 }
 
-bool TraceWnd::GetRenderThreadExit()
+bool ImagePlane::GetRenderThreadExit()
 {
 	SingleLock lock(&mCritSecThreadExit, TRUE);
 	return mRenderThreadExit;
 }
 
-void TraceWnd::SetRenderThreadExit(bool v)
+void ImagePlane::SetRenderThreadExit(bool v)
 {
 	SingleLock lock(&mCritSecThreadExit, TRUE);
 	mRenderThreadExit = v;
 }
 
-bool TraceWnd::GetRenderThreadRedraw()
+bool ImagePlane::GetRenderThreadRedraw()
 {
 	SingleLock lock(&mCritSecPixels, TRUE);
 	return mRenderThreadRedraw;
 }
 
-void TraceWnd::SetRenderThreadRedraw(bool v)
+void ImagePlane::SetRenderThreadRedraw(bool v)
 {
 	SingleLock lock(&mCritSecPixels, TRUE);
 	mRenderThreadRedraw = v;
@@ -151,10 +150,8 @@ void TraceWnd::SetRenderThreadRedraw(bool v)
 
 /////////////////////////////////////////////////////////////////////////////
 
-void TraceWnd::SetupOpenGL()
+void ImagePlane::Init()
 {
-	//TestLabWnd::SetupOpenGL();
-
 	PerformTests();
 
 	prepareImage(mRenderWidth, mRenderHeight);
@@ -168,7 +165,7 @@ void TraceWnd::SetupOpenGL()
 	//SetRenderThreadRedraw(true);
 }
 
-void TraceWnd::ShutdownOpenGL()
+void ImagePlane::Shutdown()
 {
 	SetRenderThreadExit(true);
 	WaitForSingleObject(mhRenderThread, INFINITE);
@@ -177,11 +174,9 @@ void TraceWnd::ShutdownOpenGL()
 
 	delete [] mPixels;
 	delete [] mFatPixels;
-
-	//TestLabWnd::ShutdownOpenGL();
 }
 
-void TraceWnd::RenderScene(int mWindowWidth, int mWindowHeight)
+void ImagePlane::RenderScene(int mWindowWidth, int mWindowHeight)
 {
 	//mCamControl->keepElevationAboveGroundPlane();
 	//mCamControl->setView();
@@ -225,7 +220,7 @@ void TraceWnd::RenderScene(int mWindowWidth, int mWindowHeight)
 
 //int mMaxLevel;
 
-void TraceWnd::TraceScene()
+void ImagePlane::TraceScene()
 {
 	int n;
 
@@ -442,7 +437,7 @@ void TraceWnd::TraceScene()
 	}
 }
 
-void TraceWnd::PostProcess()
+void ImagePlane::PostProcess()
 {
 	const float cInvGamma = 1.0f / 2.2f;
 
@@ -502,87 +497,7 @@ void TraceWnd::PostProcess()
 	}
 }
 
-void TraceWnd::drawCoordSysAxes()
-{
-	// Draw coord sys axes at origo
-	glPushAttrib(GL_ENABLE_BIT);
-	glDisable(GL_LIGHTING);
-  glDisable(GL_TEXTURE_2D);
-  glDisable(GL_BLEND);
-	glBegin(GL_LINES);
-		glColor3f(1,0,0); glVertex3f(0,0,0); glVertex3f(1,0,0);
-		glColor3f(0,1,0); glVertex3f(0,0,0); glVertex3f(0,1,0);
-		glColor3f(0,0,1); glVertex3f(0,0,0); glVertex3f(0,0,1);
-	glEnd();
-	glPopAttrib();
-}
-
-void TraceWnd::onMouseButton(int btn, int event, UINT flags, POINTS point)
-{
-	//if (event == EVENT_DOWN)
-	{
-		while (ShowCursor(FALSE) >= 0);
-		//SetCapture(mhWnd);
-		ShowCursor(FALSE);
-		GetCursorPos(&mMousePos);
-		SetCursorPos(320, 240);
-	}
-	//else if (event == EVENT_UP)
-	{
-		SetCursorPos(mMousePos.x, mMousePos.y);
-		//ReleaseCapture();
-		while (ShowCursor(TRUE) < 0);
-	}
-	//GLWindow::onMouseButton(btn, event, flags, point);
-}
-
-void TraceWnd::onMouseWheel(UINT nFlags, short zDelta, POINTS pt) 
-{
-	if (zDelta < 0) {
-		mCamControl->zoomInOut(0.9f);
-	} else {
-		mCamControl->zoomInOut(1.1f);
-	}
-
-	//InvalidateRect(mhWnd, NULL, FALSE);
-
-	//GLWindow::onMouseWheel(nFlags, zDelta, pt);
-}
-
-void TraceWnd::onMouseMove(UINT nFlags, POINTS point) 
-{
-	static POINTS oldp = {320, 240};
-	static POINT newp;
-
-	//mDbgWinMgr->mouseEvent( int mMouseX, int mWinHeight - mMouseY, int mMouseButton );
-
-	if (GetCapture())
-	{
-		GetCursorPos(&newp);
-		SetCursorPos(320, 240);
-
-		int dx = newp.x - oldp.x;
-		int dy = newp.y - oldp.y;
-
-		if (nFlags & MK_LBUTTON) {
-			mCamControl->moveInOut(0.1f * dy);
-		}
-		else if (nFlags & MK_MBUTTON) {
-			mCamControl->translate(0.1f * dx, -0.1f * dy);
-		}
-		else if (nFlags & MK_RBUTTON) {
-			mCamControl->rotate(-0.1f * dx, -0.1f * dy);
-		}
-
-		//onPaint();
-
-		//Invalidate(FALSE);
-	}
-	
-	//GLWindow::onMouseMove(nFlags, point);
-}
-
-void TraceWnd::DrawRandomDistribution()
+void ImagePlane::DrawRandomDistribution()
 {
 	int size = 300;
 
@@ -634,39 +549,7 @@ void TraceWnd::DrawRandomDistribution()
 	glEnd();
 }
 
-void TraceWnd::drawPreview(int orix, int oriy, int sizex, int sizey)
-{
-  //SetupViewport(0, 3*mWindowHeight/4, mWindowWidth/4, mWindowHeight/4);
-	//SetupViewport(orix, oriy, sizex, sizey);
-	//ClearViewport();
-
-	mCamControl->SetGLPerspProjection();
-	mCamControl->setView();
-
-	drawCoordSysAxes();
-
-	glDisable(GL_TEXTURE_2D);
-  glDisable(GL_BLEND);
-
-	glDisable(GL_LIGHTING);
-
-	// Draw crosshairs
-	Matrix4 view = mCamControl->getViewTransform();
-	glColor3f(0,1,1);
-	glBegin(GL_LINES);
-		glVertex3fv(&view.transform(Vec3(-0.1f,0,-1))[0]);
-		glVertex3fv(&view.transform(Vec3( 0.1f,0,-1))[0]);
-		glVertex3fv(&view.transform(Vec3(0,-0.1f,-1))[0]);
-		glVertex3fv(&view.transform(Vec3(0, 0.1f,-1))[0]);
-	glEnd();
-
-	mRayEngine->dbgDrawStoredRays();
-	//mRayEngine->dbgDrawGrid();
-
-	mRayEngine->drawScenePreview();
-}
-
-void TraceWnd::prepareImage(int width, int height)
+void ImagePlane::prepareImage(int width, int height)
 {
 	mCritSecPixels.lock();
 
@@ -685,7 +568,7 @@ void TraceWnd::prepareImage(int width, int height)
 	mCritSecPixels.unlock();
 }
 
-void TraceWnd::saveImage(const char *filename)
+void ImagePlane::saveImage(const char *filename)
 {
 	/*
 	corona::Image* image = corona::CreateImage(
@@ -734,7 +617,7 @@ void TraceWnd::saveImage(const char *filename)
 	*/
 }
 
-void TraceWnd::PerformTests()
+void ImagePlane::PerformTests()
 {
 /*
   volatile clock_t nowt, startt;
@@ -764,27 +647,19 @@ void TraceWnd::PerformTests()
 */
 }
 
-void TraceWnd::onChar(UINT nChar, UINT nRepCnt, UINT nFlags)
+/*
+void ImagePlane::onChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	// TODO: Add your message handler code here and/or call default
 	switch (toupper(nChar))
 	{
 		case 'T' :
-			// FIXME!
 			mCamControl->mUseTrackballControl = !mCamControl->mUseTrackballControl;
 			mCamControl->mLookAt.assign(0,0,0);
 			break;
 
 		// 'F1', 'T', 'L' are occupied...
 		case 'W' : mDrawRealtime = !mDrawRealtime; break;
-		/*
-		case 'E' :
-			if (mNumSceneObjs == (int)mSceneObjects.size())
-				mNumSceneObjs -= 5;
-			else
-				mNumSceneObjs = (int)mSceneObjects.size();
-			break;
-		*/
 		case 'A' :
 			mCritSecPixels.lock();
 			mUseAntiAlias = !mUseAntiAlias;
@@ -795,7 +670,6 @@ void TraceWnd::onChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 		case 'F' : mRayEngine->mUseFresnel = !mRayEngine->mUseFresnel; break;
 		case 'S' : mRayEngine->mUseSchlickApprox = !mRayEngine->mUseSchlickApprox; break;
 		//case 'H' : mRayEngine->mUseGrid = !mRayEngine->mUseGrid; break;
-		/*
 		case '+' :
 			if (mMaxRecursionLevel < 5) mMaxRecursionLevel++;
 			else mMaxRecursionLevel += 5;
@@ -804,7 +678,6 @@ void TraceWnd::onChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 			if (mMaxRecursionLevel > 5) mMaxRecursionLevel -= 5;
 			else if (mMaxRecursionLevel > 0) mMaxRecursionLevel--;
 			break;
-		*/
 		case 'Z' : mRayEngine->mAttC = 1.0f - mRayEngine->mAttC; break;
 		case 'X' : mRayEngine->mAttL = 1.0f - mRayEngine->mAttL; break;
 		case 'C' : mRayEngine->mAttQ = 1.0f - mRayEngine->mAttQ; break;
@@ -822,7 +695,6 @@ void TraceWnd::onChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 			mRayEngine->dbgEndStoringRays();
 			break;
 		}
-		/*
 		case 'V' :
 		{
 			float lightI = mSceneLights[0]->color[0];
@@ -839,7 +711,6 @@ void TraceWnd::onChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 			mAttC = lightI;
 			break;
 		}
-		*/
 		case 'K' :
 			mCritSecPixels.lock();
 			saveImage();
@@ -863,7 +734,7 @@ void TraceWnd::onChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 	}
 	//TestLabWnd::onChar(nChar, nRepCnt, nFlags);
 }
-
+*/
 /////////////////////////////////////////////////////////////////////////////
 // Menus and keyboard shortcuts
 /*
@@ -875,7 +746,7 @@ enum RateRacerCommands
 	cmdUseGammaCorr,
 };
 
-void TraceWnd::createMenus()
+void ImagePlane::createMenus()
 {
 	SubMenu drop1("&Test", &mKeyTable);
 		drop1.addMenuItem("&Render", cmdRender, 0, 'R');
@@ -890,7 +761,7 @@ void TraceWnd::createMenus()
 	//mMenuBar.show();
 }
 
-bool TraceWnd::onCommand(UINT id, UINT ctrlNotifyCode, LONG_PTR pCtrl)
+bool ImagePlane::onCommand(UINT id, UINT ctrlNotifyCode, LONG_PTR pCtrl)
 {
 	// Return true if processing this command!
 	switch (id)
