@@ -121,6 +121,17 @@ void Scene::InitScene()
 
 // Load some mesh object
 
+	obj = new Model("models/test.chunks");
+  Model *model = (Model*)obj;
+  MaterialMap::iterator m = model->mMaterialMap.begin();
+  setRandomSeed();
+  for(; m != model->mMaterialMap.end(); m++)
+  {
+    m->second->diffColor.assign(nrand(), nrand(), nrand());
+    //printf("Material: %s - %f %f %f\n",
+    //  m->first.c_str(), m->second->diffColor[0], m->second->diffColor[1], m->second->diffColor[2]);
+  }
+	mShapes.push_back(obj);
 #if 0
 	//obj = new Model("models/plant.gw");
 	//((Model*)obj)->mMaterials[0]->diffColor.assign(0.0f,0.8f,0.0f);
@@ -190,7 +201,7 @@ void Scene::InitScene()
 	//mShapes.push_back(obj);
 	*/
 
-#if 1
+#if 0
 	// diffuse (Lambert) spheres
 
 	obj = new Sphere(Vec3(0,1.01f,1.5f), 1);
@@ -388,7 +399,7 @@ void Scene::InitScene()
 	*/
 #endif
 
-#if 1
+#if 0
 	// Roof ////////////////////////////////////////////////////////////////////
 	obj = new Plane( Vec3(0,-1,0), -10 );
 	obj->material = mat = new Material();

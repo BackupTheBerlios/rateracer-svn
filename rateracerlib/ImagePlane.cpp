@@ -44,7 +44,7 @@ ImagePlane::ImagePlane()
   mRenderThreadStop = false;
 	mRenderThreadRedraw = false;
 
-	mRenderThreadPercentageDone = 100;
+	mRenderThreadPercentageDone = 0;
 	mRenderTimeSeconds = 0;
 }
 
@@ -71,10 +71,14 @@ void ImagePlane::RenderThreadEntryPoint()
 
 			mCritSecPixels.lock();
 			TraceScene();
-			PostProcess();
+      if (!mRenderThreadStop) {
+        PostProcess();
+      }
 			mCritSecPixels.unlock();
 
-			signalListenerWindow();
+      if (!mRenderThreadStop) {
+  			signalListenerWindow();
+      }
 
 			//RequestRedraw();
 		}
@@ -351,8 +355,10 @@ void ImagePlane::TraceScene()
 
 				idx++;
 
-        if (mRenderThreadStop) break;
+        if (mRenderThreadStop) return; // per pixel
 			}
+
+      //if (mRenderThreadStop) return; // per line
 
 			/*nowtime = clock();
       if (!mDrawRealtime && nowtime - lasttime > CLOCKS_PER_SEC) {
@@ -360,19 +366,18 @@ void ImagePlane::TraceScene()
 				//RequestRedraw();
 			}*/
 
-			mRenderThreadPercentageDone += 100.0f / (numSamples * mRenderHeight);
 			mRenderTimeSeconds = float(clock() - starttime) / CLOCKS_PER_SEC;
+			mRenderThreadPercentageDone += 100.0f / (numSamples * mRenderHeight);
 		}
 	}
-
-	clock_t endtime = clock();
-	mRenderTimeSeconds = float(endtime - starttime) / CLOCKS_PER_SEC;
 
 	/*if (!mDrawRealtime) {
 		printf("finished! Elapsed time: %.2f seconds\n",
 			float(endtime - starttime) / CLOCKS_PER_SEC);
 	}*/
 
+	clock_t endtime = clock();
+	mRenderTimeSeconds = float(endtime - starttime) / CLOCKS_PER_SEC;
 	mRenderThreadPercentageDone = 100;
 }
 

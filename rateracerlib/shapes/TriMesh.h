@@ -1,73 +1,111 @@
 #pragma once
 
+#include <string>
+#include <map>
+
 #include "Shape.h"
 #include "Triangle.h"
 
 #include "DebugDraw.h"
 
+#include "chunks/chunkMesh.h"
+
 extern Vec3 gDefaultNormal;
 extern Vec2 gDefaultUV;
+
+// FIXME
+typedef std::map< std::string, Material* > MaterialMap;
 
 class TriMesh : public Shape
 {
 public:
-	TriMesh(FILE* infile, Material *mat)
+	TriMesh(ChunkMesh *pMesh, const char* name, MaterialMap& materialMap)
 	{
 		lastHit = NULL;
 
-		// TODO: split tris in material groups, scrap this incoming material
-		material = mat;
+    mMeshName = name;
+
+		printf("\n* Mesh chunk: '%s'\n", name);
+		printf("numVertices: %d\n", pMesh->numVertices);
+		printf("numNormals: %d\n", pMesh->numNormals);
+		printf("numUVs: %d\n", pMesh->numUVs);
 
 		int n, g, f;
 
-		int numVertices;
-		fread(&numVertices, sizeof(int), 1, infile);
-		mVertices.resize(numVertices);
-		for (n = 0; n < numVertices; n++) {
-			fread(&mVertices[n], sizeof(Vec3), 1, infile);
+    // FIXME: Reuse (point into) existing arrays in model!
+
+		mVertices.resize(pMesh->numVertices);
+		for (n = 0; n < pMesh->numVertices; n++) {
+      mVertices[n][0] = pMesh->vertices[3*n+0];
+      mVertices[n][1] = pMesh->vertices[3*n+1];
+      mVertices[n][2] = pMesh->vertices[3*n+2];
 		}
 
-		int numNormals;
-		fread(&numNormals, sizeof(int), 1, infile);
-		mNormals.resize(numNormals);
-		for (n = 0; n < numNormals; n++) {
-			fread(&mNormals[n], sizeof(Vec3), 1, infile);
+		mNormals.resize(pMesh->numNormals);
+		for (n = 0; n < pMesh->numNormals; n++) {
+			mNormals[n][0] = pMesh->normals[3*n+0];
+			mNormals[n][1] = pMesh->normals[3*n+1];
+			mNormals[n][2] = pMesh->normals[3*n+2];
 		}
 
-		int numUVs;
-		fread(&numUVs, sizeof(int), 1, infile);
-		mUVs.resize(numUVs);
-		for (n = 0; n < numUVs; n++) {
-			fread(&mUVs[n], sizeof(Vec2), 1, infile);
+		mUVs.resize(pMesh->numUVs);
+		for (n = 0; n < pMesh->numUVs; n++) {
+			mUVs[n][0] = pMesh->uvs[2*n+0];
+			mUVs[n][0] = pMesh->uvs[2*n+1];
 		}
 
-		int numGroups;
-		int materialID;
-		int numFaces;
 		int vi[3], ni[3], uvi[3];
 		Triangle *tri;
-		fread(&numGroups, sizeof(int), 1, infile);
-		for (g = 0; g < numGroups; g++)
+
+		printf("numMeshGroups: %d\n", pMesh->numMeshGroups);
+    for (g = 0; g < pMesh->numMeshGroups; g++)
 		{
-			fread(&materialID, sizeof(int), 1, infile);
-			fread(&numFaces, sizeof(int), 1, infile);
-			for (f = 0; f < numFaces; f++)
+			MeshGroup *pGroup = pMesh->meshGroups[g];
+			printf("  Mesh group: material = '%s' numTriangles = %d\n",
+				pGroup->materialName, pGroup->numTriangles);
+
+      Material *mat = materialMap[pGroup->materialName];
+      if (mat == NULL)
+      {
+        mat = new Material();
+        materialMap[pGroup->materialName] = mat;
+      }
+      /* MaterialMap::iterator it = materialMap.find(pGroup->materialName);
+      if (it != materialMap.end()) {
+        mat = it->second;
+      }
+      else {
+        mat = new Material();
+        materialMap[pGroup->materialName] = mat;
+      }*/
+
+      // FIXME: Allocate all triangles here!
+
+			for (f = 0; f < pGroup->numTriangles; f++)
 			{
-				// TODO: write cleaner
-				fread(&vi[0], sizeof(int), 3, infile);
-				fread(&ni[0], sizeof(int), 3, infile);
-				fread(&uvi[0], sizeof(int), 3, infile);
+				vi[0] = pGroup->vertexIndices[3*f+0];
+				vi[1] = pGroup->vertexIndices[3*f+1];
+				vi[2] = pGroup->vertexIndices[3*f+2];
+
+				ni[0] = pGroup->normalIndices[3*f+0];
+				ni[1] = pGroup->normalIndices[3*f+1];
+				ni[2] = pGroup->normalIndices[3*f+2];
+
+				uvi[0] = pGroup->uvIndices[3*f+0];
+				uvi[1] = pGroup->uvIndices[3*f+1];
+				uvi[2] = pGroup->uvIndices[3*f+2];
 
 				tri = new Triangle(&mVertices[vi[0]], &mVertices[vi[1]], &mVertices[vi[2]]);
 				tri->N0 = &mNormals[ni[0]]; tri->N1 = &mNormals[ni[1]]; tri->N2 = &mNormals[ni[2]];
 
-				if (numUVs == 0) {
+				if (pMesh->numUVs == 0) {
 					tri->uv0 = tri->uv1 = tri->uv2 = &gDefaultUV;
 				} else {
 					tri->uv0 = &mUVs[uvi[0]]; tri->uv1 = &mUVs[uvi[1]]; tri->uv2 = &mUVs[uvi[2]];
 				}
 
 				tri->material = mat;
+
 				mTris.push_back(tri);
 			}
 		}
@@ -80,6 +118,7 @@ public:
 		}
 	}
 
+  std::string mMeshName;
 	std::vector<Vec3> mVertices;
 	std::vector<Vec3> mNormals;
 	std::vector<Vec2> mUVs;
@@ -170,8 +209,9 @@ public:
 
 	void drawPreview()
 	{
-		material->setPreviewMaterial();
+		//material->setPreviewMaterial();
 		for (int n = 0; n < (int)mTris.size(); n++) {
+      mTris[n]->material->setPreviewMaterial();
 			mTris[n]->drawPreview();
 		}
 	}

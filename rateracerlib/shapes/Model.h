@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <map>
+
 #include "Shape.h"
 #include "Triangle.h"
 #include "TriMesh.h"
@@ -14,42 +17,6 @@ public:
 	{
 		mTotalNumTris = 0;
 		lastHit = NULL;
-
-		/*
-		FILE *infile = fopen(modelfile, "rb");
-		if ( infile == NULL )
-		{
-			printf("Could not open input file '%s'\n", modelfile);
-			return;
-		}
-
-		int chunk;
-
-		for (;;)
-		{
-			fread(&chunk, sizeof(int), 1, infile);
-			switch (chunk)
-			{
-				case CHUNK_MESH :
-				{
-					Material *mat = new Material();
-					TriMesh *mesh = new TriMesh(infile, mat);
-					mMaterials.push_back(mat);
-					mMeshes.push_back(mesh);
-					break;
-				}
-				// TODO: import materials, lights, cameras
-			}
-			if (chunk == CHUNK_NO_MORE_DATA) break;
-		}
-
-		fclose(infile);
-
-		mTotalNumTris = 0;
-		for (int n = 0; n < (int)mMeshes.size(); n++) {
-			mTotalNumTris += mMeshes[n]->getNumTris();
-		}
-		*/
 
 		Serializer serializer;
 		//serializer.mVerbosePrint = true;
@@ -70,6 +37,7 @@ public:
 		printf("formatstring: %s\n", chunksFile.formatstring);
 		printf("numChunks: %d\n", chunksFile.numChunks);
 
+		mTotalNumTris = 0;
 		for (int n = 0; n < chunksFile.numChunks; n++)
 		{
 			ChunkHeader *chunkHeader = (ChunkHeader *)chunksFile.chunkHeaders[n];
@@ -79,18 +47,10 @@ public:
 				case CHUNKTYPE_MESH :
 				{
 					ChunkMesh *pMesh = (ChunkMesh *)chunkHeader->chunkData;
-					printf("\n* Mesh chunk: '%s'\n", chunkHeader->chunkName);
-					printf("numVertices: %d\n", pMesh->numVertices);
-					printf("numNormals: %d\n", pMesh->numNormals);
-					printf("numUVs: %d\n", pMesh->numUVs);
 
-					printf("numMeshGroups: %d\n", pMesh->numMeshGroups);
-					for (int g = 0; g < pMesh->numMeshGroups; g++)
-					{
-						MeshGroup *pGroup = pMesh->meshGroups[g];
-						printf("  Mesh group: material = '%s' numTriangles = %d\n",
-							pGroup->materialName, pGroup->numTriangles);
-					}
+					TriMesh *mesh = new TriMesh(pMesh, chunkHeader->chunkName, mMaterialMap);
+					mMeshes.push_back(mesh);
+
 					break;
 				}
 
@@ -104,6 +64,14 @@ public:
 		}
 
 		serializer.close();
+
+		printf("-------------------------------------------------------------------------------\n");
+
+		mTotalNumTris = 0;
+		for (int n = 0; n < (int)mMeshes.size(); n++) {
+			mTotalNumTris += mMeshes[n]->getNumTris();
+		}
+		printf("Total nr of triangles: %d\n", mTotalNumTris);
 	}
 
 	virtual ~Model()
@@ -114,6 +82,9 @@ public:
 	}
 
 	int mTotalNumTris;
+
+  typedef std::map< std::string, Material* > MaterialMap;
+  MaterialMap mMaterialMap;
 
 	std::vector<Material*> mMaterials;
 	std::vector<TriMesh*> mMeshes;

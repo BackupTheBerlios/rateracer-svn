@@ -266,6 +266,7 @@ namespace RateRacerGUI
         this.BeginInvoke(mi, new object [] { renderSize } );
       }
       else {
+        mTimer.Stop();
         //Console.WriteLine("render: " + System.Threading.Thread.CurrentThread.GetHashCode());
         if (!Visible) Show();
         Activate();
@@ -309,9 +310,11 @@ namespace RateRacerGUI
       float timeSecs = this.bmpControl1.renderingTimeSeconds();
       labelStatus.Text = "Rendering: " + percentage + "%" +
         " Elapsed time: " + timeString(timeSecs);
+      Console.WriteLine(labelStatus.Text);
       if (percentage == 100)
       {
         mTimer.Stop();
+        Console.WriteLine("Stop!");
       }
     }
 

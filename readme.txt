@@ -1,6 +1,24 @@
-RateRacer project log
----------------------
+Rate Racer - a renderer
+-----------------------
+This is my hobby raytracer and global illumination renderer project,
+along with exporters and loaders for different file formats.
 
+Build Tips:
+- You need Microsoft Visual C++ and C# v7.1 (or later)
+- You also need Microsoft .NET Framework 1.1 (or later)
+- To build MayaExporter, create environment variable MAYA_PATH pointing to
+  your Maya installation directory. Then add Maya's include and lib
+  directories under MSDEV - Tools - Options - Projects - VC++ Directories.
+- To start the raytracer, set RateRacerGUI as your startup project.
+  Set RateRacerGUI Properties -
+        Configuration Properties - Debugging - Working Directory
+  to the root of your checked out directory (for all configurations),
+  in order to find models etc.
+  
+// Gweronimo@users.berlios.de
+
+Project log
+-----------
 - Tested import and checkout with SubVersion via TortoiseSVN using SVN+SSH: protocol.
 - Tested anonymous checkout with SubVersion via TortoiseSVN using SVN: protocol.
 - Added chunks project (serialization of binary data)
