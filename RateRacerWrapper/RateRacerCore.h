@@ -7,12 +7,15 @@
 #include <math.h>
 #include "_vcclrit.h"
 
+#include "RenderProps.h"
+
 #include "rateracerlib/rateracerlib.h"
 #include "rateracerlib/CameraControl.h"
 #include "rateracerlib/RayEngine.h"
 #include "rateracerlib/ImagePlane.h"
 
 using namespace System;
+using namespace Gweronimo;
 
 namespace RateRacerCore
 {
@@ -40,10 +43,18 @@ namespace RateRacerCore
 			mImagePlane->mCamControl = mCamControl;
 			mImagePlane->mRayEngine = mRayEngine;
       mImagePlane->Init();
+
+			mRenderProps = new RenderProps();
+			mRenderProps->mCamControl = mCamControl;
+			mRenderProps->mRayEngine  = mRayEngine;
+			mRenderProps->mImagePlane = mImagePlane;
 		}
 
 		static void finish()
 		{
+			//mRenderProps->Dispose();
+			delete mRenderProps;
+
       mImagePlane->Shutdown();
 			delete mImagePlane;
 
@@ -63,6 +74,8 @@ namespace RateRacerCore
       // Transfer camera settings here!!!
 			mImagePlane->RequestRenderThreadRedraw();
 		}
+
+		static RenderProps* mRenderProps;
 
 		static CameraControl* mCamControl;
 

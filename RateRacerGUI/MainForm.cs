@@ -31,6 +31,9 @@ namespace RateRacerGUI
     private System.Windows.Forms.MenuItem mi320x240;
     private System.Windows.Forms.MenuItem mi160x120;
     private System.Windows.Forms.MenuItem mi1280x1024;
+    private System.Windows.Forms.Panel panel2;
+    private System.Windows.Forms.ComboBox comboBox1;
+    private System.Windows.Forms.PropertyGrid propertyGrid1;
 		/// <summary>
 		/// Required designer variable.
 		/// </summary>
@@ -61,6 +64,8 @@ namespace RateRacerGUI
       this.SuspendLayout();
       panel1.Controls.Add(this.glPreviewControl1);
       this.ResumeLayout(false);
+
+      propertyGrid1.SelectedObject = RateRacerEngine.mRenderProps;
 		}
 
 		/// <summary>
@@ -90,22 +95,26 @@ namespace RateRacerGUI
       this.mainMenu1 = new System.Windows.Forms.MainMenu();
       this.menuItem1 = new System.Windows.Forms.MenuItem();
       this.menuItem2 = new System.Windows.Forms.MenuItem();
-      this.miRender = new System.Windows.Forms.MenuItem();
       this.menuItem3 = new System.Windows.Forms.MenuItem();
+      this.mi160x120 = new System.Windows.Forms.MenuItem();
+      this.mi320x240 = new System.Windows.Forms.MenuItem();
+      this.mi640x480 = new System.Windows.Forms.MenuItem();
       this.mi800x600 = new System.Windows.Forms.MenuItem();
       this.mi1024x768 = new System.Windows.Forms.MenuItem();
-      this.mi640x480 = new System.Windows.Forms.MenuItem();
-      this.mi320x240 = new System.Windows.Forms.MenuItem();
-      this.mi160x120 = new System.Windows.Forms.MenuItem();
       this.mi1280x1024 = new System.Windows.Forms.MenuItem();
+      this.miRender = new System.Windows.Forms.MenuItem();
+      this.panel2 = new System.Windows.Forms.Panel();
+      this.comboBox1 = new System.Windows.Forms.ComboBox();
+      this.propertyGrid1 = new System.Windows.Forms.PropertyGrid();
+      this.panel2.SuspendLayout();
       this.SuspendLayout();
       // 
       // panel1
       // 
       this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
-      this.panel1.Location = new System.Drawing.Point(0, 0);
+      this.panel1.Location = new System.Drawing.Point(176, 0);
       this.panel1.Name = "panel1";
-      this.panel1.Size = new System.Drawing.Size(312, 245);
+      this.panel1.Size = new System.Drawing.Size(304, 253);
       this.panel1.TabIndex = 0;
       this.panel1.Resize += new System.EventHandler(this.panel1_Resize);
       // 
@@ -128,12 +137,6 @@ namespace RateRacerGUI
       this.menuItem2.Index = 0;
       this.menuItem2.Text = "Use pathtracing";
       // 
-      // miRender
-      // 
-      this.miRender.Index = 2;
-      this.miRender.Text = "Render!";
-      this.miRender.Click += new System.EventHandler(this.miRender_Click);
-      // 
       // menuItem3
       // 
       this.menuItem3.Index = 1;
@@ -145,6 +148,27 @@ namespace RateRacerGUI
                                                                               this.mi1024x768,
                                                                               this.mi1280x1024});
       this.menuItem3.Text = "Resolution";
+      // 
+      // mi160x120
+      // 
+      this.mi160x120.Index = 0;
+      this.mi160x120.RadioCheck = true;
+      this.mi160x120.Text = "160 x 120";
+      this.mi160x120.Click += new System.EventHandler(this.menuResolution_Click);
+      // 
+      // mi320x240
+      // 
+      this.mi320x240.Index = 1;
+      this.mi320x240.RadioCheck = true;
+      this.mi320x240.Text = "320 x 240";
+      this.mi320x240.Click += new System.EventHandler(this.menuResolution_Click);
+      // 
+      // mi640x480
+      // 
+      this.mi640x480.Index = 2;
+      this.mi640x480.RadioCheck = true;
+      this.mi640x480.Text = "640 x 480";
+      this.mi640x480.Click += new System.EventHandler(this.menuResolution_Click);
       // 
       // mi800x600
       // 
@@ -160,27 +184,6 @@ namespace RateRacerGUI
       this.mi1024x768.Text = "1024 x 768";
       this.mi1024x768.Click += new System.EventHandler(this.menuResolution_Click);
       // 
-      // mi640x480
-      // 
-      this.mi640x480.Index = 2;
-      this.mi640x480.RadioCheck = true;
-      this.mi640x480.Text = "640 x 480";
-      this.mi640x480.Click += new System.EventHandler(this.menuResolution_Click);
-      // 
-      // mi320x240
-      // 
-      this.mi320x240.Index = 1;
-      this.mi320x240.RadioCheck = true;
-      this.mi320x240.Text = "320 x 240";
-      this.mi320x240.Click += new System.EventHandler(this.menuResolution_Click);
-      // 
-      // mi160x120
-      // 
-      this.mi160x120.Index = 0;
-      this.mi160x120.RadioCheck = true;
-      this.mi160x120.Text = "160 x 120";
-      this.mi160x120.Click += new System.EventHandler(this.menuResolution_Click);
-      // 
       // mi1280x1024
       // 
       this.mi1280x1024.Index = 5;
@@ -188,16 +191,61 @@ namespace RateRacerGUI
       this.mi1280x1024.Text = "1280 x 1024";
       this.mi1280x1024.Click += new System.EventHandler(this.menuResolution_Click);
       // 
+      // miRender
+      // 
+      this.miRender.Index = 2;
+      this.miRender.Text = "Render!";
+      this.miRender.Click += new System.EventHandler(this.miRender_Click);
+      // 
+      // panel2
+      // 
+      this.panel2.Controls.Add(this.propertyGrid1);
+      this.panel2.Controls.Add(this.comboBox1);
+      this.panel2.Dock = System.Windows.Forms.DockStyle.Left;
+      this.panel2.Location = new System.Drawing.Point(0, 0);
+      this.panel2.Name = "panel2";
+      this.panel2.Size = new System.Drawing.Size(176, 253);
+      this.panel2.TabIndex = 1;
+      // 
+      // comboBox1
+      // 
+      this.comboBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+        | System.Windows.Forms.AnchorStyles.Right)));
+      this.comboBox1.Location = new System.Drawing.Point(8, 8);
+      this.comboBox1.Name = "comboBox1";
+      this.comboBox1.Size = new System.Drawing.Size(160, 21);
+      this.comboBox1.TabIndex = 0;
+      this.comboBox1.Text = "comboBox1";
+      // 
+      // propertyGrid1
+      // 
+      this.propertyGrid1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+        | System.Windows.Forms.AnchorStyles.Left) 
+        | System.Windows.Forms.AnchorStyles.Right)));
+      this.propertyGrid1.CommandsVisibleIfAvailable = true;
+      this.propertyGrid1.LargeButtons = false;
+      this.propertyGrid1.LineColor = System.Drawing.SystemColors.ScrollBar;
+      this.propertyGrid1.Location = new System.Drawing.Point(8, 32);
+      this.propertyGrid1.Name = "propertyGrid1";
+      this.propertyGrid1.Size = new System.Drawing.Size(160, 216);
+      this.propertyGrid1.TabIndex = 1;
+      this.propertyGrid1.Text = "propertyGrid1";
+      this.propertyGrid1.ToolbarVisible = false;
+      this.propertyGrid1.ViewBackColor = System.Drawing.SystemColors.Window;
+      this.propertyGrid1.ViewForeColor = System.Drawing.SystemColors.WindowText;
+      // 
       // MainForm
       // 
       this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-      this.ClientSize = new System.Drawing.Size(312, 245);
+      this.ClientSize = new System.Drawing.Size(480, 253);
       this.Controls.Add(this.panel1);
+      this.Controls.Add(this.panel2);
       this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
       this.Menu = this.mainMenu1;
       this.Name = "MainForm";
       this.Text = "Rate Racer - a renderer";
       this.Load += new System.EventHandler(this.MainForm_Load);
+      this.panel2.ResumeLayout(false);
       this.ResumeLayout(false);
 
     }

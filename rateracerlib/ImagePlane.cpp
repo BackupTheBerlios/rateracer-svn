@@ -19,16 +19,16 @@ ImagePlane::ImagePlane()
 {
 	mListenerHWND = NULL;
 
-	mRenderWidth = 200; mRenderHeight = 200;//150
+	mRenderWidth = 200; mRenderHeight = 200;
 
-	mDrawPreview = true;
-	mDrawRealtime = false;
+	//mDrawRealtime = false;
 
 	mUseGammaCorrection = true;
 	mUseAntiAlias = false;
 
 	mRelativeAperture = 0;//0.10f;
 	mFocusDistance = 2.0f;
+
 	mNumDOFSamples = 25;//160;
 
 	mPixels = NULL;
@@ -610,27 +610,7 @@ void ImagePlane::onChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 	{
 		// 'F1', 'T', 'L' are occupied...
 		case 'W' : mDrawRealtime = !mDrawRealtime; break;
-		case 'A' :
-			mCritSecPixels.lock();
-			mUseAntiAlias = !mUseAntiAlias;
-			PostProcess();
-			mCritSecPixels.unlock();
-			break;
-		case 'D' : mRayEngine->mUseAttenuation = !mRayEngine->mUseAttenuation; break;
-		case 'F' : mRayEngine->mUseFresnel = !mRayEngine->mUseFresnel; break;
-		case 'S' : mRayEngine->mUseSchlickApprox = !mRayEngine->mUseSchlickApprox; break;
 		//case 'H' : mRayEngine->mUseGrid = !mRayEngine->mUseGrid; break;
-		case '+' :
-			if (mMaxRecursionLevel < 5) mMaxRecursionLevel++;
-			else mMaxRecursionLevel += 5;
-			break;
-		case '-' :
-			if (mMaxRecursionLevel > 5) mMaxRecursionLevel -= 5;
-			else if (mMaxRecursionLevel > 0) mMaxRecursionLevel--;
-			break;
-		case 'Z' : mRayEngine->mAttC = 1.0f - mRayEngine->mAttC; break;
-		case 'X' : mRayEngine->mAttL = 1.0f - mRayEngine->mAttL; break;
-		case 'C' : mRayEngine->mAttQ = 1.0f - mRayEngine->mAttQ; break;
 		case 'V' :
 		{
 			// Shoot crosshair ray
@@ -661,79 +641,32 @@ void ImagePlane::onChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 			mAttC = lightI;
 			break;
 		}
-		case 'K' :
-			mCritSecPixels.lock();
-			saveImage();
-			mCritSecPixels.unlock();
-			break;
-		case 'J' :
-			if (mRenderWidth == 200) {
-				prepareImage(800, 600);
-			} else {
-				prepareImage(200, 150);
-			}
-			RequestRenderThreadRedraw();
-			break;
-		case 'O' :
-			mRayEngine->mUsePathTracing = !mRayEngine->mUsePathTracing;
-			break;
-		case 'Q' :
-			mRayEngine->mUseImplicitCosSampling = !mRayEngine->mUseImplicitCosSampling;
-			break;
-		// TODO: Maybe call base class onChar() in default case?
 	}
 	//TestLabWnd::onChar(nChar, nRepCnt, nFlags);
 }
 */
-/////////////////////////////////////////////////////////////////////////////
-// Menus and keyboard shortcuts
-/*
-enum RateRacerCommands
-{
-	cmdRender = 10,
-	cmdToggleMenuBar,
-	cmdShowPreview,
-	cmdUseGammaCorr,
-};
 
-void ImagePlane::createMenus()
+void ImagePlane::setGammaCorrection(bool useGammaCorrection)
 {
-	SubMenu drop1("&Test", &mKeyTable);
-		drop1.addMenuItem("&Render", cmdRender, 0, 'R');
-		drop1.addMenuItem("Menu Bar", cmdToggleMenuBar, 0, VK_F2);
-		drop1.addMenuItem("Show Preview", cmdShowPreview, 0, 'P');
-		drop1.addSeparator();
-		drop1.addMenuItem("Use Gamma Correction", cmdUseGammaCorr, 0, 'G');
-	mMenuBar.addDropdownMenu(drop1);
-
-	mMenuBar.refresh();
-	//mMenuBar.hide();
-	//mMenuBar.show();
-}
-
-bool ImagePlane::onCommand(UINT id, UINT ctrlNotifyCode, LONG_PTR pCtrl)
-{
-	// Return true if processing this command!
-	switch (id)
+	if (mRenderThreadPercentageDone == 100)
 	{
-		case cmdToggleMenuBar :
-			if (mMenuBar.isHidden()) mMenuBar.show(); else mMenuBar.hide();
-			break;
-		case cmdShowPreview : mDrawPreview = !mDrawPreview; break;
-		case cmdRender : mRenderThreadRedraw = true; break;
-		case cmdUseGammaCorr :
-			mCritSecPixels.lock();
-			mUseGammaCorrection = !mUseGammaCorrection;
-			PostProcess();
-			mCritSecPixels.unlock();
-			break;
-		// TODO: Maybe return base class onCommand() in default case?
+		mCritSecPixels.lock();
+		mUseGammaCorrection = useGammaCorrection;
+		PostProcess();
+		mCritSecPixels.unlock();
 	}
-	InvalidateRect(mhWnd, NULL, FALSE);
-
-	return TestLabWnd::onCommand(id, ctrlNotifyCode, pCtrl);
 }
-*/
+
+void ImagePlane::setAntiAliasing(bool useAntialiasing)
+{
+	if (mRenderThreadPercentageDone == 100)
+	{
+		mCritSecPixels.lock();
+		mUseAntiAlias = !useAntialiasing;
+		PostProcess();
+		mCritSecPixels.unlock();
+	}
+}
 
 void ImagePlane::updateBitmapPixels()
 {

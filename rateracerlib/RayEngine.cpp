@@ -230,12 +230,12 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 			// Add in global ambient light
 			color += compMul(matColor, mScene->mGlobalAmbientLight);
 		}
-		else
+		else if (level < 3)
 		{
 			// if (ray0.numDiffBounces = 0)
 			// Perform path tracing (integrate over hemisphere / final gathering)
 
-			int numSamples = (level == 0 ? 16 : 1);
+			int numSamples = 1;//(level == 0 ? 16 : 1);
 			float weightFactor = 1.0f / float(numSamples);
 
 			if (!mUseImplicitCosSampling)

@@ -163,6 +163,9 @@
 		<File
 			RelativePath=".\RateRacerCore.h">
 		</File>
+		<File
+			RelativePath=".\RenderProps.h">
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

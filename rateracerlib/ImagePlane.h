@@ -65,8 +65,8 @@ public:
 	//void DrawRandomDistribution();
 
 	HWND mListenerHWND;
-	bool mDrawPreview;
-	bool mDrawRealtime;
+
+	//bool mDrawRealtime;
 
 	void prepareImage(int width, int height);
 	int mRenderWidth, mRenderHeight;
@@ -74,6 +74,8 @@ public:
 	FatPixel *mFatPixels;
 	UINT *mBitmapPixels;
 
+	void setGammaCorrection(bool useGammaCorrection);
+	void setAntiAliasing(bool useAntialiasing);
 	bool mUseGammaCorrection;
 	bool mUseAntiAlias;
 
@@ -84,7 +86,6 @@ public:
 	RayEngine *mRayEngine;
 	CameraControl *mCamControl;
 
-	bool mUseTrackballControl;
 	//bool mMoveLight;
 
 	//Camera mDefaultCam;
