@@ -11,15 +11,24 @@ RayEngine::RayEngine()
   mScene = NULL;
 
 	mMaxRecursionLevel = 15; // TODO: replace with diminishing returns
+  mStoreRays = false;
 
 	mUseFresnel = true;
 
 	mUsePathTracing = false;
 	mUseImplicitCosSampling = true;
+
+  mUsePhotonMap = true;
+  mMaxNumPhotons = 100000;
+  mNumPhotons = 100000;
+  mPhotonMap = new Photon_map(mMaxNumPhotons);
+  mEstimateMaxDist = 10.0f;
+  mEstimateNPhotons = 100;
 }
 
 RayEngine::~RayEngine()
 {
+  delete mPhotonMap;
 }
 
 void RayEngine::init()
@@ -475,7 +484,7 @@ void RayEngine::InstantRadiosity(int N, float rho)
 	Ray r; r.color = Vec3(1,1,0);
 
 	Vec3 normal;
-	Photon photon;
+	InstantPhoton photon;
 
 	start = (float)N;
 	end = N;
@@ -637,6 +646,242 @@ Vec3 RayEngine::InstantTraceRay(Ray& ray0, int level, Vec3& lpos)
   //return (lpos - p).length() < 0.5f ? Vec3(1,1,1) : Vec3(0,0,0);
 }
 
+void RayEngine::ShootPhotons(int numPhotons)
+{
+  if (mPhotonMap->get_num_photons() > 0) return;
+
+  printf("\nShooting photons...");
+
+  Vec3 lpos = mScene->mLights[0]->position;
+  Vec3 LDir = (Vec3(0,0,0) - lpos).normalize();
+  Vec3 vec;
+  float NdotVec;
+
+  Vec3 power(1,1,1);
+
+  //dbgBeginStoringRays();
+
+  while (mPhotonMap->get_num_photons() < numPhotons)
+  {
+    rndUnitVec(vec);
+    NdotVec = dot(LDir, vec);
+    if (NdotVec < 0) { vec = -vec; NdotVec = -NdotVec; }
+    if (NdotVec < 0.5f) continue;
+
+    Ray rayPhoton(lpos, vec); rayPhoton.color.assign(0.5f,0.5f,0.25f);
+    //rayPath.offset(cEpsilon, N);
+    //Vec3 colorPath = TraceRay(rayPath, level+1);
+
+    TracePhotonRay(rayPhoton, power);
+  }
+  //dbgEndStoringRays();
+
+  mPhotonMap->scale_photon_power( 1.0f / float(numPhotons) );
+  mPhotonMap->balance();
+
+  printf("done! (%d photons)\n", mPhotonMap->get_num_photons());
+  Vec3 bmin, bmax;
+  mPhotonMap->get_bounding_box(bmin.v_, bmax.v_);
+  Vec3 bounds = bmax - bmin;
+  printf("kd-tree bounds: %f %f %f\n", bounds[0], bounds[1], bounds[2]);
+}
+
+void RayEngine::TracePhotonRay(Ray& rayPhoton, Vec3 power)
+{
+  Shape *hitObject = findHit(rayPhoton);
+  if (hitObject == NULL) return;
+  //dbgStoreRay(rayPhoton);
+
+  Vec3 p = rayPhoton.hitPoint();
+  Vec3 N = hitObject->getNormal(p);
+  Vec3 L = -rayPhoton.dir;
+
+  bool hitInsideOfObject = false;
+  if (dot(hitObject->getPrimitiveNormal(p), L) < 0) {
+    hitInsideOfObject = true;
+    N = -N;
+  }
+
+  // Interpolated N sometimes makes NdotL become negative!
+  float NdotL = dot(N,L);
+  if (NdotL < 0) {
+    NdotL = 0; // Clamp to 90 degrees between N and L...
+  }
+
+  const Material *material = hitObject->material;
+
+  //if (hitObject->material->reflect > 0.0f) continue;
+
+  if (material->refract > 0.0f)
+  {
+    bool doRefraction = true;
+    Vec3 T;
+    //float ni = 1;	float nr = 1; float n = ni / nr;
+    float n = material->refract;
+    if (hitInsideOfObject) n = material->refractInv;
+
+    float w = n * NdotL;
+    float radical = 1 + (w - n)*(w + n);
+    if (radical < 0) {
+      // Total internal reflection...
+      return;
+      //fresnelTerm = 1;
+      doRefraction = false;
+      //color = mScene->mBackgroundColor;
+    }
+    else
+    {
+      float k = sqrtf(radical);
+      T = (w - k)*N - n*L;
+      //T = (n*NdotV - sqrtf(1 - n*n*(1 - NdotV*NdotV)))*N - n*V;
+    }
+
+    if (doRefraction) // fresnelTerm < 1.0f
+    {
+      Ray rayRefr(p, T);
+      rayRefr.offset(cEpsilon, -N);
+      //rayRefr.offset(cEpsilon, T);
+
+      //rayRefr.dimRet = rayPhoton.dimRet * (1.0f - fresnelTerm);
+      if (rayRefr.dimRet > 0.001f)
+      {
+        //rayRefr.transmitColor = matColor;
+        if (hitInsideOfObject) {
+          rayRefr.refractInsideCounter = rayPhoton.refractInsideCounter - 1;
+          rayRefr.color.assign(0,1,1);
+        } else {
+          rayRefr.refractInsideCounter = rayPhoton.refractInsideCounter + 1;
+          rayRefr.color.assign(1,0,1);
+        }
+
+        Vec2 uv = hitObject->getUV(p);
+        Vec3 matColor = material->getColor(p, uv);
+
+        // Should be using Beer's law...
+        power = compMul(matColor, power);
+
+        TracePhotonRay(rayRefr, power);//, level+1);
+      }
+    }
+  }
+  else
+  {
+    mPhotonMap->store(power.v_, p.v_, rayPhoton.dir.v_);
+  }
+}
+
+Vec3 RayEngine::PhotonMapTraceRay(Ray& ray0, int level)
+{
+  Vec3 irrad(0,0,0);
+  Vec3 color(0,0,0);
+  Vec3 color1(0,0,0);
+  Vec3 color2(0,0,0);
+
+  Shape *hitObject = findHit(ray0);
+  //dbgStoreRay(ray0);
+  if (hitObject != NULL)
+  {
+    Vec3 p = ray0.hitPoint();
+    Vec3 N = hitObject->getNormal(p);
+    mPhotonMap->irradiance_estimate( irrad.v_, p.v_, N.v_, 
+      mEstimateMaxDist, mEstimateNPhotons );
+
+    /*
+    Vec3 photonpos;
+    Vec3 irrad2
+    for (int n = 1; n <= mPhotonMap->get_num_photons(); n++)
+    {
+      photonpos.copyFrom( mPhotonMap->get_photons()[n].pos );
+      //irrad2 += Vec3(1,1,1) / (1.0f+(photonpos - p).lengthSquared());
+      if ((photonpos - p).length() < 0.1f) irrad2.assign(1,1,1);
+    }
+    irrad = compMul(irrad, Vec3(1,0,0));
+    //irrad2 *= 1.0f / mPhotonMap->stored_photons;
+    irrad2 = compMul(irrad2, Vec3(0,1,0));
+    */
+
+    const Material *material = hitObject->material;
+
+    Vec2 uv = hitObject->getUV(p);
+    Vec3 matColor = material->getColor(p, uv);
+
+    Vec3 L = -ray0.dir;
+
+    bool hitInsideOfObject = false;
+    if (dot(hitObject->getPrimitiveNormal(p), L) < 0) {
+      hitInsideOfObject = true;
+      N = -N;
+    }
+
+    // Interpolated N sometimes makes NdotL become negative!
+    float NdotL = dot(N,L);
+    if (NdotL < 0) {
+      NdotL = 0; // Clamp to 90 degrees between N and L...
+    }
+
+    //if (hitObject->material->reflect > 0.0f) continue;
+
+    if (material->refract > 0.0f)
+    {
+      bool doRefraction = true;
+      Vec3 T;
+      //float ni = 1;	float nr = 1; float n = ni / nr;
+      float n = material->refract;
+      if (hitInsideOfObject) n = material->refractInv;
+
+      float w = n * NdotL;
+      float radical = 1 + (w - n)*(w + n);
+      if (radical < 0) {
+        // Total internal reflection...
+        return Vec3(0,0,0);
+        //fresnelTerm = 1;
+        doRefraction = false;
+        //color = mScene->mBackgroundColor;
+      }
+      else
+      {
+        float k = sqrtf(radical);
+        T = (w - k)*N - n*L;
+        //T = (n*NdotV - sqrtf(1 - n*n*(1 - NdotV*NdotV)))*N - n*V;
+      }
+
+      if (doRefraction) // fresnelTerm < 1.0f
+      {
+        Ray rayRefr(p, T);
+        rayRefr.offset(cEpsilon, -N);
+        //rayRefr.offset(cEpsilon, T);
+
+        //rayRefr.dimRet = rayPhoton.dimRet * (1.0f - fresnelTerm);
+        if (rayRefr.dimRet > 0.001f)
+        {
+          //rayRefr.transmitColor = matColor;
+          if (hitInsideOfObject) {
+            rayRefr.refractInsideCounter = ray0.refractInsideCounter - 1;
+            rayRefr.color.assign(0,1,1);
+          } else {
+            rayRefr.refractInsideCounter = ray0.refractInsideCounter + 1;
+            rayRefr.color.assign(1,0,1);
+          }
+
+          color1 = PhotonMapTraceRay(rayRefr, level+1);
+
+          // Should be using Beer's law...
+          color1 = compMul(matColor, color1);
+        }
+      }
+    }
+    else
+    {
+      color1 = compMul(100.0f * irrad, matColor);
+    }
+  }
+
+  return color1;
+
+  //color2 = TraceRay(ray0, level);
+  //return 0.5f * (color1 + color2);
+}
+
 void RayEngine::dbgBeginStoringRays()
 {
 	mStoreRays = true;
@@ -680,4 +925,38 @@ void RayEngine::dbgDrawStoredRays()
 		glVertex3fv(&mRadioSamples[i].pos[0]);
 	}
 	glEnd();
+}
+
+void drawKDBox(const Photon *photons, int half, int index, Vec3 bmin, Vec3 bmax)
+{
+  drawAAWireBox(bmin, bmax);
+
+  Vec3 pos(photons[index].pos);
+  short plane = photons[index].plane;
+
+  Vec3 e0 = bmin, e1 = bmax;
+  e0[plane] = pos[plane];
+  e1[plane] = pos[plane];
+
+  if (index <= half)
+  {
+    drawKDBox(photons, half, 2*index,   bmin, e1);
+    drawKDBox(photons, half, 2*index+1, e0, bmax);
+  }
+}
+
+void RayEngine::dbgDrawPhotons()
+{
+  if (mPhotonMap->get_num_photons() > 0)
+  {
+    Vec3 bmin, bmax;
+    mPhotonMap->get_bounding_box(bmin.v_, bmax.v_);
+    //drawAAWireBox(bmin, bmax);
+
+    int depth = 5;
+    int half = (mPhotonMap->get_num_photons()-1)/2;
+    if (half > (int)pow(2,depth)) half = (int)pow(2,depth);
+    drawKDBox(mPhotonMap->get_photons(), half,
+              1, bmin, bmax);
+  }
 }

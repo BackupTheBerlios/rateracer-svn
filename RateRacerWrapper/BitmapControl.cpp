@@ -98,15 +98,21 @@ namespace Gweronimo
 			//updateBitmap();
       //Refresh();
 			PostProcessingDone(this, EventArgs::Empty);
-      /*
-			GdiPlusBitmap::saveGdiPlusBitmap(
-        L"images/testsave.png",
-				RateRacerEngine::mImagePlane->mRenderWidth,
-				RateRacerEngine::mImagePlane->mRenderHeight,
-				RateRacerEngine::mImagePlane->mBitmapPixels);
-      */
 		}
 	}
+
+  void BmpControl::saveBitmap(String *filename)
+  {
+    WCHAR* cstr = (WCHAR*)Marshal::StringToHGlobalUni(filename).ToPointer();
+
+    updateBitmap();
+    GdiPlusBitmap::saveGdiPlusBitmap(cstr,
+      RateRacerEngine::mImagePlane->mRenderWidth,
+      RateRacerEngine::mImagePlane->mRenderHeight,
+      RateRacerEngine::mImagePlane->mBitmapPixels);
+
+    Marshal::FreeHGlobal(cstr);
+  }
 
 	/*
 	void BmpControl::createBitmap()

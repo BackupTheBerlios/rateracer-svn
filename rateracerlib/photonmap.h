@@ -10,6 +10,7 @@ typedef struct Photon {
   float pos[3];                 // photon position
   short plane;                  // splitting plane for kd-tree
   unsigned char theta, phi;     // incoming direction
+  float dir[3]; // (Test)
   float power[3];               // photon power (uncompressed)
 } Photon;
 
@@ -24,6 +25,8 @@ typedef struct NearestPhotons {
   int found;
   int got_heap;
   float pos[3];
+  float maxDistSq; // (Added)
+  float maxDistFoundSq; // (Added)
   float *dist2;
   const Photon **index;
 } NearestPhotons;

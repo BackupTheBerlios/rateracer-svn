@@ -52,6 +52,9 @@ namespace RateRacerGUI
     private System.Windows.Forms.Splitter splitter2;
     private System.Windows.Forms.Button btnStop;
     private System.Windows.Forms.ProgressBar progressBar1;
+    private System.Windows.Forms.MenuItem menuItem3;
+    private System.Windows.Forms.MenuItem miSaveImage;
+    private System.Windows.Forms.SaveFileDialog saveFileDialog1;
 		/// <summary>
 		/// Required designer variable.
 		/// </summary>
@@ -100,6 +103,7 @@ namespace RateRacerGUI
       cbZoom.Items.Add(800);
 
       lblStatus.Text = "Ready";
+      progressBar1.Visible = false;
 
       mTimer = new System.Windows.Forms.Timer();
       mTimer.Tick += new EventHandler(mTimer_Tick);
@@ -187,9 +191,12 @@ namespace RateRacerGUI
       this.cbProps = new System.Windows.Forms.ComboBox();
       this.lblStatus = new System.Windows.Forms.Label();
       this.statusPanel = new System.Windows.Forms.Panel();
+      this.progressBar1 = new System.Windows.Forms.ProgressBar();
       this.renderPanel = new System.Windows.Forms.Panel();
       this.splitter1 = new System.Windows.Forms.Splitter();
-      this.progressBar1 = new System.Windows.Forms.ProgressBar();
+      this.menuItem3 = new System.Windows.Forms.MenuItem();
+      this.miSaveImage = new System.Windows.Forms.MenuItem();
+      this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
       this.sidePanel.SuspendLayout();
       this.propsPanel.SuspendLayout();
       this.statusPanel.SuspendLayout();
@@ -209,7 +216,8 @@ namespace RateRacerGUI
       // mainMenu1
       // 
       this.mainMenu1.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
-                                                                              this.menuItem1});
+                                                                              this.menuItem1,
+                                                                              this.menuItem3});
       // 
       // menuItem1
       // 
@@ -441,6 +449,14 @@ namespace RateRacerGUI
       this.statusPanel.Size = new System.Drawing.Size(664, 24);
       this.statusPanel.TabIndex = 3;
       // 
+      // progressBar1
+      // 
+      this.progressBar1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+      this.progressBar1.Location = new System.Drawing.Point(480, 4);
+      this.progressBar1.Name = "progressBar1";
+      this.progressBar1.Size = new System.Drawing.Size(176, 16);
+      this.progressBar1.TabIndex = 3;
+      // 
       // renderPanel
       // 
       this.renderPanel.AutoScroll = true;
@@ -460,13 +476,18 @@ namespace RateRacerGUI
       this.splitter1.TabIndex = 5;
       this.splitter1.TabStop = false;
       // 
-      // progressBar1
+      // menuItem3
       // 
-      this.progressBar1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-      this.progressBar1.Location = new System.Drawing.Point(480, 4);
-      this.progressBar1.Name = "progressBar1";
-      this.progressBar1.Size = new System.Drawing.Size(176, 16);
-      this.progressBar1.TabIndex = 3;
+      this.menuItem3.Index = 1;
+      this.menuItem3.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+                                                                              this.miSaveImage});
+      this.menuItem3.Text = "Image";
+      // 
+      // miSaveImage
+      // 
+      this.miSaveImage.Index = 0;
+      this.miSaveImage.Text = "Save...";
+      this.miSaveImage.Click += new System.EventHandler(this.miSaveImage_Click);
       // 
       // MainForm
       // 
@@ -583,6 +604,8 @@ namespace RateRacerGUI
         mTimer.Start();
       }
 
+      progressBar1.Value = 0;
+      progressBar1.Visible = true;
       updateRenderStatus();
     }
 
@@ -596,6 +619,7 @@ namespace RateRacerGUI
       enableRenderButtons();
       bmpControl1.updateBitmap();
       bmpControl1.Refresh();
+      progressBar1.Visible = false;
       updateRenderStatus();
     }
 
@@ -619,6 +643,8 @@ namespace RateRacerGUI
       bmpControl1.updateBitmap();
       bmpControl1.Refresh();
       updateRenderStatus();
+
+      glPreviewControl1.Refresh();
     }
 
     bool updateRenderStatus()
@@ -629,11 +655,12 @@ namespace RateRacerGUI
       progressBar1.Value = percentage;
       if (percentage == 100)
       {
+        progressBar1.Visible = false;
         lblStatus.Text = "Rendering: Done! " + timeString(timeSecs);
       }
       else if (!isRendering)
       {
-        progressBar1.Value = 0;
+        progressBar1.Visible = false;
         lblStatus.Text = "Rendering: Stopped.";
       }
       else if (!chkAutoRender.Checked)
@@ -646,6 +673,7 @@ namespace RateRacerGUI
       }
 
       lblStatus.Refresh();
+      progressBar1.Refresh();
       return (percentage == 100);
     }
 
@@ -898,6 +926,16 @@ namespace RateRacerGUI
     private void btnStop_Click(object sender, System.EventArgs e)
     {
       stopRender();
+    }
+
+    private void miSaveImage_Click(object sender, System.EventArgs e)
+    {
+      saveFileDialog1.RestoreDirectory = true;
+      saveFileDialog1.Filter = ".PNG Files|*.png";
+      if (saveFileDialog1.ShowDialog(this) != DialogResult.Cancel)
+      {
+        bmpControl1.saveBitmap(saveFileDialog1.FileName);
+      }
     }
 
   }

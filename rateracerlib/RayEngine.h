@@ -9,6 +9,8 @@
 
 #include "Ray.h"
 
+#include "photonmap.h"
+
 class RayEngine
 {
 public:
@@ -48,7 +50,18 @@ public:
 	int mMaxRecursionLevel;
 
 	void InstantRadiosity(int N, float rho);
-	std::vector<Photon> mRadioSamples;
+	std::vector<InstantPhoton> mRadioSamples;
+
+  bool mUsePhotonMap;
+  int mMaxNumPhotons;
+  int mNumPhotons;
+  float mEstimateMaxDist;
+  int mEstimateNPhotons;
+  void ShootPhotons(int numPhotons);
+  void TracePhotonRay(Ray& rayPhoton, Vec3 power);
+  Vec3 PhotonMapTraceRay(Ray& ray0, int level);
+  void dbgDrawPhotons();
+  Photon_map *mPhotonMap;
 
 	Scene *mScene;
 	

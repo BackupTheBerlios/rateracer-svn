@@ -221,6 +221,12 @@
 			RelativePath=".\mathlib.h">
 		</File>
 		<File
+			RelativePath=".\photonmap.cpp">
+		</File>
+		<File
+			RelativePath=".\photonmap.h">
+		</File>
+		<File
 			RelativePath=".\rateracerlib.h">
 		</File>
 		<File

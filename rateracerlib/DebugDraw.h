@@ -12,7 +12,8 @@ void drawMatrix(const Matrix4 *mat = NULL, float scale = 1, bool drawrings = tru
 void drawAAWireBox(float xside = 1, float yside = 1, float zside = 1,
 									 const Vec3& origin = Vec3(0,0,0));
 
-void drawAAWireBox(const Vec3& size, const Vec3& origin = Vec3(0,0,0));
+void drawAAWireBox(const Vec3& min, const Vec3& max);
 
+void drawAAWireCube(float side = 1, const Vec3& origin = Vec3(0,0,0));
 
 void drawTransparentSphere(const Vec3& centre, float radius);

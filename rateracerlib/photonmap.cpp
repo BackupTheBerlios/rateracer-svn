@@ -66,9 +66,12 @@ Photon_map :: ~Photon_map()
 void Photon_map :: photon_dir( float *dir, const Photon *p ) const
 //*****************************************************************
 {
-  dir[0] = sintheta[p->theta]*cosphi[p->phi];
-  dir[1] = sintheta[p->theta]*sinphi[p->phi];
-  dir[2] = costheta[p->theta];
+  dir[0] = p->dir[0];
+  dir[1] = p->dir[1];
+  dir[2] = p->dir[2];
+  //dir[0] = sintheta[p->theta]*cosphi[p->phi];
+  //dir[1] = sintheta[p->theta]*sinphi[p->phi];
+  //dir[2] = costheta[p->theta];
 }
 
 
@@ -94,14 +97,17 @@ void Photon_map :: irradiance_estimate(
   np.max = nphotons;
   np.found = 0;
   np.got_heap = 0;
-  np.dist2[0] = max_dist*max_dist;
+  np.maxDistSq = max_dist*max_dist;
+  np.maxDistFoundSq = 0;
 
   // locate the nearest photons
   locate_photons( &np, 1 );
 
   // if less than 8 photons return
-  if (np.found<8)
-    return;
+  //if (nphotons >= 8 && np.found<8) return;
+  if (np.found<1) return;
+
+  //printf("found %d photons\n", np.found);
 
   float pdir[3];
 
@@ -111,15 +117,16 @@ void Photon_map :: irradiance_estimate(
     // the photon_dir call and following if can be omitted (for speed)
     // if the scene does not have any thin surfaces
     photon_dir( pdir, p );
-    if ( (pdir[0]*normal[0]+pdir[1]*normal[1]+pdir[2]*normal[2]) < 0.0f ) {
-      irrad[0] += p->power[0];
-      irrad[1] += p->power[1];
-      irrad[2] += p->power[2];
+    float NdotL = -(pdir[0]*normal[0]+pdir[1]*normal[1]+pdir[2]*normal[2]);
+    if ( NdotL > 0.0f )
+    {
+      irrad[0] += NdotL * p->power[0];
+      irrad[1] += NdotL * p->power[1];
+      irrad[2] += NdotL * p->power[2];
     }
   }
 
-  const float tmp=(1.0f/M_PI)/(np.dist2[0]);	// estimate of density
-
+  const float tmp=(1.0f/M_PI)/(np.maxDistFoundSq);	// estimate of density
   irrad[0] *= tmp;
   irrad[1] *= tmp;
   irrad[2] *= tmp;
@@ -136,18 +143,22 @@ void Photon_map :: locate_photons(
 //******************************************
 {
   const Photon *p = &photons[index];
-  float dist1;
+  float dist1, dist2;
 
-  if (index<half_stored_photons) {
+  if (index <= half_stored_photons)
+  {
     dist1 = np->pos[ p->plane ] - p->pos[ p->plane ];
 
-    if (dist1>0.0) { // if dist1 is positive search right plane
+    if (dist1 > 0.0) // if dist1 is positive search right half-plane first
+    {
       locate_photons( np, 2*index+1 );
-      if ( dist1*dist1 < np->dist2[0] )
+      if ( dist1*dist1 < np->maxDistSq )
         locate_photons( np, 2*index );
-    } else {         // dist1 is negative search left first
+    }
+    else // dist1 is negative, search left half-plane first
+    {
       locate_photons( np, 2*index );
-      if ( dist1*dist1 < np->dist2[0] )
+      if ( dist1*dist1 < np->maxDistSq )
         locate_photons( np, 2*index+1 );
     }
   }
@@ -155,13 +166,13 @@ void Photon_map :: locate_photons(
   // compute squared distance between current photon and np->pos
 
   dist1 = p->pos[0] - np->pos[0];
-  float dist2 = dist1*dist1;
+  dist2 = dist1*dist1;
   dist1 = p->pos[1] - np->pos[1];
   dist2 += dist1*dist1;
   dist1 = p->pos[2] - np->pos[2];
   dist2 += dist1*dist1;
   
-  if ( dist2 < np->dist2[0] ) {
+  if ( dist2 < np->maxDistSq ) {
     // we found a photon  [:)] Insert it in the candidate list
 
     if ( np->found < np->max ) {
@@ -169,6 +180,7 @@ void Photon_map :: locate_photons(
       np->found++;
       np->dist2[np->found] = dist2;
       np->index[np->found] = p;
+      if (np->maxDistFoundSq < dist2) np->maxDistFoundSq = dist2;
     } else {
       int j,parent;
 
@@ -213,11 +225,12 @@ void Photon_map :: locate_photons(
         j += j;
       }
       if (dist2 < np->dist2[parent]) {
-        np->index[parent] = p;
         np->dist2[parent] = dist2;
+        np->index[parent] = p;
       }
 
-      np->dist2[0] = np->dist2[1];
+      np->maxDistSq = np->dist2[1];
+      np->maxDistFoundSq = np->maxDistSq;
     }
   }
 }
@@ -250,6 +263,8 @@ void Photon_map :: store(
       bbox_max[i] = node->pos[i];
 
     node->power[i] = power[i];
+
+    node->dir[i] = dir[i];
   }
 
   int theta = int( acos(dir[2])*(256.0/M_PI) );
@@ -299,7 +314,7 @@ void Photon_map :: balance(void)
     Photon **pa1 = (Photon**)malloc(sizeof(Photon*)*(stored_photons+1));
     Photon **pa2 = (Photon**)malloc(sizeof(Photon*)*(stored_photons+1));
 
-    for (int i=0; i<=stored_photons; i++)
+    for (int i=0; i<=stored_photons; i++) // FIXME? Should start at index 1...
       pa2[i] = &photons[i];
 
     balance_segment( pa1, pa2, 1, 1, stored_photons );
@@ -317,7 +332,7 @@ void Photon_map :: balance(void)
       else {
         photons[j] = foo_photon;
 
-        if (i<stored_photons) {
+        if (i<stored_photons) { // FIXME? <=
           for (;foo<=stored_photons; foo++)
             if (pa1[foo] != NULL)
               break;
@@ -331,7 +346,7 @@ void Photon_map :: balance(void)
     free(pa1);
   }
 
-  half_stored_photons = stored_photons/2-1;
+  half_stored_photons = (stored_photons-1) / 2;
 }
 
 

@@ -37,6 +37,8 @@ namespace Gweronimo
 		//void startRender();
 		void updateBitmap();
 
+    void saveBitmap(String *filename);
+
 		int renderingPercentage();
 		float renderingTimeSeconds();
 

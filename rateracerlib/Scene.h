@@ -11,7 +11,7 @@
 
 class Model;
 
-struct Photon {
+struct InstantPhoton {
 	Vec3 pos;
 	Vec3 color;
 };

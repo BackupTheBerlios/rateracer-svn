@@ -60,7 +60,8 @@ void Scene::InitScene()
 	mAttL = 0;
 	mAttQ = 1;
 
-	src = new LightSource(Vec3(1,8,8), Vec3(lightI, lightI, lightI));
+  src = new LightSource(Vec3(0,10,0), Vec3(lightI, lightI, lightI));
+  //src = new LightSource(Vec3(1,8,8), Vec3(lightI, lightI, lightI));
 	//src = new LightSource(10*Vec3(1,8,-8), Vec3(lightI, lightI, lightI));
 	mLights.push_back(src);
 
@@ -128,7 +129,7 @@ void Scene::InitScene()
 
 // Load some mesh objects
 
-#if 1
+#if 0
   model = new Model("models/test.chunks");
   //model = new Model("models/lucy.chunks");
   MaterialMap::iterator m = model->mMaterialMap.begin();
@@ -303,7 +304,7 @@ void Scene::InitScene()
 	mShapes.push_back(obj);
 #endif
 
-#if 0
+#if 1
 	// Four Spheres
 	//Vec3 pos(3,0,3);
 	Vec3 pos(0,0,0);
@@ -326,8 +327,8 @@ void Scene::InitScene()
 	((Sphere*)obj)->centre += pos;
 	obj->material = mat = new Material();
 	//mat->diffColor.assign(1,0,1);
-	//mat->diffColor.assign(0.5f,0.5f,1);
-	mat->diffColor.assign(1,1,1);
+	mat->diffColor.assign(0.5f,0.5f,1);
+	//mat->diffColor.assign(1,1,1);
 	//mat->diffColor *= 0.5f;
 	//mat->diffColor.assign(0,0,0);
 	mat->shininess = 50.0f;
@@ -342,8 +343,8 @@ void Scene::InitScene()
 	obj = new Sphere(Vec3(0,1.01f,-1.5f), 1);
 	((Sphere*)obj)->centre += pos;
 	obj->material = mat = new Material();
-	//mat->diffColor.assign(0,1,1);
-	mat->diffColor.assign(1,1,1);
+	mat->diffColor.assign(1,0.5f,0.5f);
+	//mat->diffColor.assign(1,1,1);
 	mat->fresnelAmountAtNormalIncidence = 2*cFresnelGlass;
 	//mat->shininess = 500.0f;
 	mat->shininess = 10.0f;

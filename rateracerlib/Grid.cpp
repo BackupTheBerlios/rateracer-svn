@@ -241,7 +241,7 @@ void Grid::dbgDrawStoredVoxels()
 		pos[0] = min[0] + mStoredVoxels[n].x * cellsize[X];
 		pos[1] = min[1] + mStoredVoxels[n].y * cellsize[Y];
 		pos[2] = min[2] + mStoredVoxels[n].z * cellsize[Z];
-		drawAAWireBox(cellsize, pos);
+		drawAAWireBox(pos, pos + cellsize);
 	}
 }
 
@@ -272,5 +272,5 @@ void Grid::dbgDrawGrid()
 	glEnd();
 
 	glColor3f(0,0,1);
-	drawAAWireBox(boundsize, min);
+	drawAAWireBox(min, min + boundsize);
 }

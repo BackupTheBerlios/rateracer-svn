@@ -167,7 +167,7 @@ public:
 
 	void drawBoundingBoxes()
 	{
-		drawAAWireBox(bb.pp[1] - bb.pp[0], bb.pp[0]);
+		drawAAWireBox(bb.pp[0], bb.pp[1]);
     left->drawBoundingBoxes();
     right->drawBoundingBoxes();
 	}

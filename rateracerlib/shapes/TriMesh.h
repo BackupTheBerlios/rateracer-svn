@@ -226,7 +226,7 @@ public:
 		material->setPreviewMaterial();
 		Vec3 min, max;
 		calcBounds(min, max);
-		drawAAWireBox(max - min, min);
+		drawAAWireBox(min, max);
 	}
 
 	void drawPreview()

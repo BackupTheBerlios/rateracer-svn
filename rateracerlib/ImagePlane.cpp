@@ -200,6 +200,50 @@ void ImagePlane::TraceScene()
 	float px, py;
 	int x, y, idx;
 
+  if (mRayEngine->mUsePhotonMap)
+  {
+    // Use an odd number here (otherwise one photon will be unused)
+    const cNumPhotons = mRayEngine->mNumPhotons;
+
+    mRayEngine->ShootPhotons(cNumPhotons);
+
+    //float lightI = 1;
+    //mRayEngine->mScene->mAttC = lightI;
+    //mRayEngine->mScene->mAttL = 0;//0.25;
+    //mRayEngine->mScene->mAttQ = 1;//0.5;
+    //mRayEngine->mScene->mUseAttenuation = false;
+
+    mRayEngine->mUseFresnel = false;
+    mRayEngine->mScene->mUseGrid = true;
+    mUseAntiAlias = false;
+
+    idx = 0;
+    for (y = 0, py = y0; y < mRenderHeight; y++, py += pixelSize) {
+      for (x = 0, px = x0; x < mRenderWidth; x++, px += pixelSize) {
+
+        if (x == mRenderWidth / 2 && y == mRenderHeight / 2) {
+          //mRayEngine->dbgBeginStoringRays();
+          ray.color.assign(1,1,0);
+        }
+
+        // Pixel center ray
+        ray.dir.assign(px,py,-1); ray.dir.normalize();
+        ray.dir = view.vecTransform(ray.dir);
+        mFatPixels[idx].colorSum += mRayEngine->PhotonMapTraceRay(ray, 0);
+        mFatPixels[idx].color = mFatPixels[idx].colorSum;
+
+        mPixels[idx] = mFatPixels[idx].color;
+
+        //mRayEngine->dbgEndStoringRays();
+
+        idx++;
+
+        if (mRenderThreadStop) break;
+      }
+    }
+    return;
+  }
+
 #if 0
 	const cNumPhotons = 100;
 

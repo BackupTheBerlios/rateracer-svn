@@ -8,13 +8,15 @@
 
 class Vec3
 {
-protected:
+//protected:
+public:
   float v_[3];
 
 public:
   Vec3();
   Vec3(const Vec3&);
   Vec3(float, float, float);
+  Vec3(const float[3]);
 
   // array access
   float& operator [](int);
@@ -26,7 +28,7 @@ public:
 	
   void setZero();
     
-  void copyFrom(float [3]);
+  void copyFrom(const float [3]);
   void copyTo(float [3]) const;
 	
 	// operations
@@ -101,6 +103,11 @@ MATH_INLINE Vec3::Vec3(const Vec3& v)
 MATH_INLINE Vec3::Vec3(float x, float y, float z)
 {
   v_[0] = x; v_[1] = y; v_[2] = z;
+}
+
+MATH_INLINE Vec3::Vec3(const float f[3])
+{
+  v_[0] = f[0]; v_[1] = f[1]; v_[2] = f[2];
 }
 
 // ARRAY ACCESS
@@ -249,7 +256,7 @@ MATH_INLINE Vec3& Vec3::normalizeSafely()
   return *this;
 }
 
-MATH_INLINE void Vec3::copyFrom(float f[3])
+MATH_INLINE void Vec3::copyFrom(const float f[3])
 {
   v_[0] = f[0]; v_[1] = f[1]; v_[2] = f[2];
 }

@@ -154,6 +154,8 @@ namespace Gweronimo
 
 		RateRacerEngine::mRayEngine->dbgDrawStoredRays();
 
+    RateRacerEngine::mRayEngine->dbgDrawPhotons();
+
 		//RateRacerEngine::mScene->dbgDrawGrid();
 		RateRacerEngine::mScene->drawScenePreview();
 	}

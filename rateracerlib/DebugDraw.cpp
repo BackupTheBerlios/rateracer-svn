@@ -122,9 +122,15 @@ void drawAAWireBox(float xside, float yside, float zside, const Vec3& origin)
 	glPopAttrib();
 }
 
-void drawAAWireBox(const Vec3& size, const Vec3& origin)
+void drawAAWireBox(const Vec3& min, const Vec3& max)
 {
-	drawAAWireBox(size[0], size[1], size[2], origin);
+  Vec3 size = max - min;
+	drawAAWireBox(size[0], size[1], size[2], min);
+}
+
+void drawAAWireCube(float side, const Vec3& origin)
+{
+  drawAAWireBox(side, side, side, origin);
 }
 
 void drawTransparentSphere(const Vec3& centre, float radius)
