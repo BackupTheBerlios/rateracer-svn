@@ -4,6 +4,8 @@
 #include "BitmapControl.h"
 #include "RateRacerCore.h"
 
+#include "GdiPlusBitmap.h"
+
 #include "rateracerlib/RayEngine.h"
 
 using namespace System::Drawing::Imaging;
@@ -24,11 +26,31 @@ namespace Gweronimo
 		return pParams;
 	}
 
+	BmpControl::BmpControl()
+	{
+		//mTimer = new Timers::Timer();
+		//mTimer = new Windows::Forms::Timer();
+
+		mZoom = 1;
+		mInterpolate = false;
+	}
+
+	void BmpControl::Dispose(bool disposing)
+	{
+		//Console::WriteLine(S"Dispose({0}) called.", (b ? S"true" : S"false"));
+
+		Control::Dispose(disposing); // HWND is sometimes destroyed here!
+
+		if (disposing) {
+			//GC::SuppressFinalize(this);
+		}
+	}
+
 	void BmpControl::OnHandleCreated(EventArgs* e)
 	{
 		Control::OnHandleCreated(e);
 
-		//this->SetStyle(ControlStyles::EnableNotifyMessage, true);
+		this->SetStyle(ControlStyles::EnableNotifyMessage, true);
 
 		this->SetStyle(ControlStyles::ResizeRedraw, true);
 
@@ -38,9 +60,11 @@ namespace Gweronimo
 
 		this->UpdateStyles();
 
-		mTimer->Tick += new EventHandler( this, TimerEventProcessor );
-		mTimer->Interval = 1000;
-		mTimer->Start();
+		//mTimer->Tick += new EventHandler( this, TimerEventProcessor );
+		//mTimer->Interval = 1000;
+
+		RateRacerEngine::mImagePlane->setListenerWindow(
+			(HWND)get_Handle().ToPointer());
 
 		//Console::WriteLine(S"Handle created: {0}", get_Handle().ToInt32().ToString());
 	}
@@ -49,18 +73,20 @@ namespace Gweronimo
 	{
 		//Console::WriteLine(S"Handle destroyed: {0}", get_Handle().ToInt32().ToString());
 
-		mTimer->Stop();
+		RateRacerEngine::mImagePlane->clearListenerWindow();
+		RateRacerEngine::mImagePlane->RequestRenderThreadStop();
+
+		//mTimer->Stop();
 
 		Control::OnHandleDestroyed(e);
 	}
 
-	/*void BmpControl::OnNotifyMessage(Message m)	{
-		if (m.Msg == WM_USER_MYMESSAGE) ...
-	}*/
-
-	void BmpControl::TimerEventProcessor(Object* /*myObject*/, EventArgs* /*myEventArgs*/)
+	void BmpControl::OnNotifyMessage(Message m)
 	{
-		this->Invalidate(false);
+		if (m.Msg == WM_USER_POSTPROC_DONE) {
+			updateBitmap();
+			PostProcessingDone(this, EventArgs::Empty);
+		}
 	}
 
 	/*
@@ -109,6 +135,48 @@ namespace Gweronimo
 		mZoom = zoom;
 	}
 
+	void BmpControl::setInterpolation(bool interpolate)
+	{
+		mInterpolate = interpolate;
+	}
+
+
+	/*
+	void BmpControl::startRender()
+	{
+		//Console::WriteLine(S"Render started");
+		mTimer->Start();
+	}
+	*/
+
+	void BmpControl::updateBitmap()
+	{
+		RateRacerEngine::mImagePlane->updateBitmapPixels();
+		this->Invalidate(false);
+	}
+
+	int BmpControl::renderingPercentage()
+	{
+		return RateRacerEngine::mImagePlane->renderingPercentage();
+	}
+
+	float BmpControl::renderingTimeSeconds()
+	{
+		return RateRacerEngine::mImagePlane->renderingTimeSeconds();
+	}
+
+	/*
+	void BmpControl::TimerEventProcessor(Object* myObject, EventArgs* myEventArgs)
+	{
+		updateBitmap();
+		//Console::WriteLine( RateRacerEngine::mImagePlane->renderingPercentage() );
+		if (RateRacerEngine::mImagePlane->renderingPercentage() == 100)
+		{
+			mTimer->Stop();
+		}
+	}
+	*/
+
 	void BmpControl::OnPaintBackground(PaintEventArgs* e)
 	{
 		// Do nothing...
@@ -134,9 +202,11 @@ namespace Gweronimo
 			//::StretchDIBits(realHDC, 0,0, Width, Height,
 			//								0,0, 100,100, mPixels, mBMI, DIB_RGB_COLORS, SRCCOPY);
 
-			RateRacerEngine::mImagePlane->updateGdiPlusBitmap();
-			RateRacerEngine::mImagePlane->displayGdiPlusBitmap(
-				realHDC, mZoom);
+			GdiPlusBitmap::displayGdiPlusBitmap(
+				realHDC, mZoom, mInterpolate,
+				RateRacerEngine::mImagePlane->mRenderWidth,
+				RateRacerEngine::mImagePlane->mRenderHeight,
+				RateRacerEngine::mImagePlane->mBitmapPixels);
 
 			e->Graphics->ReleaseHdc(hdc);
 /*

@@ -18,6 +18,8 @@
 #include "LightSource.h"
 #include "shapes/Shape.h"
 
+#define WM_USER_POSTPROC_DONE		(WM_USER+0)
+
 struct FatPixel
 {
 	void setZero()
@@ -46,16 +48,23 @@ public:
 	virtual void Init();
 	virtual void Shutdown();
 
+	void setListenerWindow(HWND hWnd);
+	void clearListenerWindow();
+	void signalListenerWindow();
+
 	void TraceScene();
 	void PostProcess();
 
-	void updateGdiPlusBitmap();
-	void displayGdiPlusBitmap(HDC hdc, float zoom);
+	//void saveImage(const char *filename = NULL);
 
-	void saveImage(const char *filename = NULL);
+	void updateBitmapPixels();
+
+	int renderingPercentage();
+	float renderingTimeSeconds();
 
 	//void DrawRandomDistribution();
 
+	HWND mListenerHWND;
 	bool mDrawPreview;
 	bool mDrawRealtime;
 
@@ -93,6 +102,7 @@ public:
 	void RenderThreadEntryPoint();
 
 	void RequestRenderThreadRedraw();
+	void RequestRenderThreadStop();
 
 	HANDLE mhRenderThread;
 	CriticalSection mCritSecPixels;
@@ -100,4 +110,7 @@ public:
 	bool mRenderThreadExit;
   bool mRenderThreadStop;
 	bool mRenderThreadRedraw;
+
+	float mRenderThreadPercentageDone;
+	float mRenderTimeSeconds;
 };

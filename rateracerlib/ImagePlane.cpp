@@ -1,4 +1,4 @@
-#include <io.h> // For _findfirst() etc
+//#include <io.h> // For _findfirst() etc
 
 #include "ImagePlane.h"
 
@@ -6,10 +6,6 @@
 #include "Stratification.h"
 
 #include "DebugDraw.h"
-
-#include <gdiplus.h>
-using namespace Gdiplus;
-#pragma comment(lib, "gdiplus")
 
 /*
 #ifdef _DEBUG
@@ -21,6 +17,8 @@ static char THIS_FILE[] = __FILE__;
 
 ImagePlane::ImagePlane()
 {
+	mListenerHWND = NULL;
+
 	mRenderWidth = 200; mRenderHeight = 200;//150
 
 	mDrawPreview = true;
@@ -45,6 +43,9 @@ ImagePlane::ImagePlane()
 	mRenderThreadExit = false;
   mRenderThreadStop = false;
 	mRenderThreadRedraw = false;
+
+	mRenderThreadPercentageDone = 100;
+	mRenderTimeSeconds = 0;
 }
 
 ImagePlane::~ImagePlane()
@@ -73,6 +74,8 @@ void ImagePlane::RenderThreadEntryPoint()
 			PostProcess();
 			mCritSecPixels.unlock();
 
+			signalListenerWindow();
+
 			//RequestRedraw();
 		}
 		else
@@ -88,8 +91,14 @@ void ImagePlane::RenderThreadEntryPoint()
 void ImagePlane::RequestRenderThreadRedraw()
 {
   mRenderThreadStop = true;
+	mRenderThreadPercentageDone = 0;
 	//SingleLock lock(&mCritSecPixels, TRUE);
 	mRenderThreadRedraw = true;
+}
+
+void ImagePlane::RequestRenderThreadStop()
+{
+  mRenderThreadStop = true;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -123,6 +132,23 @@ void ImagePlane::Shutdown()
 	delete [] mFatPixels;
 }
 
+void ImagePlane::setListenerWindow(HWND hWnd)
+{
+	mListenerHWND = hWnd;
+}
+
+void ImagePlane::clearListenerWindow()
+{
+	mListenerHWND = NULL;
+}
+
+void ImagePlane::signalListenerWindow()
+{
+	if (mListenerHWND != NULL) {
+		::PostMessage(mListenerHWND, WM_USER_POSTPROC_DONE, 0,0);
+	}
+}
+
 //int mMaxLevel;
 
 void ImagePlane::TraceScene()
@@ -139,9 +165,9 @@ void ImagePlane::TraceScene()
 	clock_t starttime = clock();
   //clock_t nowtime, lasttime = starttime;
 
-	if (!mDrawRealtime) {
+	/*if (!mDrawRealtime) {
 		printf("Rendering started...");
-	}
+	}*/
 
 	Shape *excludeObj = NULL;
 
@@ -333,14 +359,31 @@ void ImagePlane::TraceScene()
 				lasttime = nowtime;
 				//RequestRedraw();
 			}*/
+
+			mRenderThreadPercentageDone += 100.0f / (numSamples * mRenderHeight);
+			mRenderTimeSeconds = float(clock() - starttime) / CLOCKS_PER_SEC;
 		}
 	}
 
 	clock_t endtime = clock();
-	if (!mDrawRealtime) {
+	mRenderTimeSeconds = float(endtime - starttime) / CLOCKS_PER_SEC;
+
+	/*if (!mDrawRealtime) {
 		printf("finished! Elapsed time: %.2f seconds\n",
 			float(endtime - starttime) / CLOCKS_PER_SEC);
-	}
+	}*/
+
+	mRenderThreadPercentageDone = 100;
+}
+
+int ImagePlane::renderingPercentage()
+{
+	return (int)mRenderThreadPercentageDone;
+}
+
+float ImagePlane::renderingTimeSeconds()
+{
+	return mRenderTimeSeconds;
 }
 
 void ImagePlane::PostProcess()
@@ -480,9 +523,9 @@ void ImagePlane::prepareImage(int width, int height)
 	mCritSecPixels.unlock();
 }
 
+/*
 void ImagePlane::saveImage(const char *filename)
 {
-	/*
 	corona::Image* image = corona::CreateImage(
 		mRenderWidth, mRenderHeight, corona::PF_R8G8B8);
 	if (image == NULL) return;
@@ -526,8 +569,8 @@ void ImagePlane::saveImage(const char *filename)
 		//MessageBox(mhWnd, "Failed to save screenshot!", "", MB_OK);
 	}
 	delete image;
-	*/
 }
+*/
 
 void ImagePlane::PerformTests()
 {
@@ -692,7 +735,7 @@ bool ImagePlane::onCommand(UINT id, UINT ctrlNotifyCode, LONG_PTR pCtrl)
 }
 */
 
-void ImagePlane::updateGdiPlusBitmap()
+void ImagePlane::updateBitmapPixels()
 {
 	if (mPixels == NULL) return;
 	int idx = 0;
@@ -705,13 +748,6 @@ void ImagePlane::updateGdiPlusBitmap()
 			idx++;
 		}
 	}
-}
-
-void ImagePlane::displayGdiPlusBitmap(HDC hdc, float zoom)
-{
-	Graphics graphics(hdc);
-	//INT row, col;
-
 	/*
 	static float scale = 0.00001f;
 	for(int y = 0; y < N; y++) {
@@ -723,39 +759,4 @@ void ImagePlane::displayGdiPlusBitmap(HDC hdc, float zoom)
 	}
 	scale += 0.00001f; if (scale > 10.0f) scale = 0.1f;
 	*/
-
-	BitmapData bitmapData;
-	bitmapData.Width = mRenderWidth;
-	bitmapData.Height = mRenderHeight;
-	bitmapData.Stride = 4*bitmapData.Width;
-	bitmapData.PixelFormat = PixelFormat32bppARGB; 
-	bitmapData.Scan0 = (VOID*)mBitmapPixels;
-	bitmapData.Reserved = NULL;
-
-	// Create a Bitmap object from a BMP file.
-	//Bitmap bitmap(L"LockBitsTest2.bmp");
-	// Display the bitmap before locking and altering it.
-	//graphics.DrawImage(&bitmap, 10, 10);
-
-	Bitmap bitmap(mRenderWidth, mRenderHeight, &graphics);
-
-	// Lock a rectangular portion of the bitmap for writing.
-	Rect rect(0, 0, mRenderWidth, mRenderHeight);
-
-	bitmap.LockBits(
-		&rect,
-		ImageLockModeWrite | ImageLockModeUserInputBuf,
-		PixelFormat32bppARGB,
-		&bitmapData);
-
-	// Commit the changes and unlock the portion of the bitmap.  
-	bitmap.UnlockBits(&bitmapData);
-
-	// Display the altered bitmap.
-	graphics.SetInterpolationMode(InterpolationModeNearestNeighbor); 
-	//graphics.SetInterpolationMode(InterpolationModeBicubic);
-
-	int width  = (int)(zoom * (float)mRenderWidth)  + (int)zoom;
-	int height = (int)(zoom * (float)mRenderHeight) + (int)zoom;
-	graphics.DrawImage(&bitmap, 0, 0, width, height);
 }

@@ -22,41 +22,30 @@ namespace Gweronimo
 	public __gc class BmpControl : public Control, public IDisposable
 	{
 	public:
-		BmpControl()
-		{
-			//mTimer = new Timers::Timer();
-			mTimer = new Windows::Forms::Timer();
+		__event EventHandler* PostProcessingDone;
 
-			mPixels = NULL;
-			mBMI = NULL;
-
-			mZoom = 1;
-			//mBitmap = NULL;
-		}
-
-		void Dispose(bool disposing)
-		{
-			//Console::WriteLine(S"Dispose({0}) called.", (b ? S"true" : S"false"));
-
-			Control::Dispose(disposing); // HWND is sometimes destroyed here!
-
-			if (disposing) {
-				//GC::SuppressFinalize(this);
-			}
-		}
+		BmpControl();
+		void Dispose(bool disposing);
 
 		//void createBitmap();
 		//void destroyBitmap();
 
 		void setResolution(System::Drawing::Size* renderSize);
-		void BmpControl::setZoom(float zoom);
+		void setZoom(float zoom);
+		void setInterpolation(bool interpolate);
+
+		//void startRender();
+		void updateBitmap();
+
+		int renderingPercentage();
+		float renderingTimeSeconds();
 
 		__property Windows::Forms::CreateParams * get_CreateParams();
 
 		void OnHandleCreated(EventArgs* e);
 		void OnHandleDestroyed(EventArgs* e);
 
-		//void OnNotifyMessage(Message m);
+		void OnNotifyMessage(Message m);
 
 		void OnPaintBackground(PaintEventArgs* e);
 		void OnPaint(PaintEventArgs* e);
@@ -64,18 +53,20 @@ namespace Gweronimo
 		void OnResize(EventArgs* e);
 		void OnGotFocus(EventArgs* e);
 
-		void TimerEventProcessor(Object *myObject, EventArgs *myEventArgs);
+		//void TimerEventProcessor(Object *myObject, EventArgs *myEventArgs);
 
 	protected:
 		//Timers::Timer* mTimer;
-		Windows::Forms::Timer* mTimer;
+		//Windows::Forms::Timer* mTimer;
 
 		float mZoom;
+		bool mInterpolate;
+
 		//Bitmap* mBitmap;
 
-		BYTE * mPixels;
-		BITMAPINFO* mBMI;
-		HBITMAP mHBITMAP;
+		//BYTE * mPixels;
+		//BITMAPINFO* mBMI;
+		//HBITMAP mHBITMAP;
 	};
 
 } // namespace

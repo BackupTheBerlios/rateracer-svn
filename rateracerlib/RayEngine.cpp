@@ -148,6 +148,9 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 	Vec2 uv = hitObject->getUV(p);
 	Vec3 matColor = material->getColor(p, uv);
 
+	// Debug: Early return (no shading)!
+	//return matColor;
+
 	if (material->refract > 0)
 	{
 		bool doRefraction = true;

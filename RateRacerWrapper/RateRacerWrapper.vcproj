@@ -134,6 +134,12 @@
 			RelativePath=".\BitmapControl.h">
 		</File>
 		<File
+			RelativePath=".\GdiPlusBitmap.cpp">
+		</File>
+		<File
+			RelativePath=".\GdiPlusBitmap.h">
+		</File>
+		<File
 			RelativePath=".\GLContext.cpp">
 		</File>
 		<File

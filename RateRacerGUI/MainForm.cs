@@ -30,12 +30,7 @@ namespace RateRacerGUI
     private System.Windows.Forms.MenuItem mi640x480;
     private System.Windows.Forms.MenuItem mi320x240;
     private System.Windows.Forms.MenuItem mi160x120;
-    private System.Windows.Forms.MenuItem mi80x60;
     private System.Windows.Forms.MenuItem mi1280x1024;
-    private System.Windows.Forms.MenuItem mi1600x1200;
-    private System.Windows.Forms.MenuItem mi1920x1440;
-    private System.Windows.Forms.MenuItem mi2048x1536;
-    private System.Windows.Forms.MenuItem menuItem4;
 		/// <summary>
 		/// Required designer variable.
 		/// </summary>
@@ -53,11 +48,9 @@ namespace RateRacerGUI
 			//
 
       mRenderSize = new Size(160, 120);
+      mi160x120.Checked = true;
 
       this.glPreviewControl1 = new Gweronimo.GLPreviewControl();
-      // 
-      // glPreviewControl1
-      // 
       this.glPreviewControl1.Name = "glPreviewControl1";
       this.glPreviewControl1.Text = "glPreviewControl1";
       this.glPreviewControl1.Location = new System.Drawing.Point(232, 40);
@@ -104,12 +97,7 @@ namespace RateRacerGUI
       this.mi640x480 = new System.Windows.Forms.MenuItem();
       this.mi320x240 = new System.Windows.Forms.MenuItem();
       this.mi160x120 = new System.Windows.Forms.MenuItem();
-      this.mi80x60 = new System.Windows.Forms.MenuItem();
       this.mi1280x1024 = new System.Windows.Forms.MenuItem();
-      this.mi1600x1200 = new System.Windows.Forms.MenuItem();
-      this.mi1920x1440 = new System.Windows.Forms.MenuItem();
-      this.mi2048x1536 = new System.Windows.Forms.MenuItem();
-      this.menuItem4 = new System.Windows.Forms.MenuItem();
       this.SuspendLayout();
       // 
       // panel1
@@ -117,7 +105,7 @@ namespace RateRacerGUI
       this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
       this.panel1.Location = new System.Drawing.Point(0, 0);
       this.panel1.Name = "panel1";
-      this.panel1.Size = new System.Drawing.Size(696, 368);
+      this.panel1.Size = new System.Drawing.Size(312, 245);
       this.panel1.TabIndex = 0;
       this.panel1.Resize += new System.EventHandler(this.panel1_Resize);
       // 
@@ -150,88 +138,60 @@ namespace RateRacerGUI
       // 
       this.menuItem3.Index = 1;
       this.menuItem3.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
-                                                                              this.mi80x60,
                                                                               this.mi160x120,
                                                                               this.mi320x240,
                                                                               this.mi640x480,
                                                                               this.mi800x600,
                                                                               this.mi1024x768,
-                                                                              this.mi1280x1024,
-                                                                              this.mi1600x1200,
-                                                                              this.mi1920x1440,
-                                                                              this.mi2048x1536,
-                                                                              this.menuItem4});
+                                                                              this.mi1280x1024});
       this.menuItem3.Text = "Resolution";
       // 
       // mi800x600
       // 
-      this.mi800x600.Index = 4;
+      this.mi800x600.Index = 3;
+      this.mi800x600.RadioCheck = true;
       this.mi800x600.Text = "800 x 600";
       this.mi800x600.Click += new System.EventHandler(this.menuResolution_Click);
       // 
       // mi1024x768
       // 
-      this.mi1024x768.Index = 5;
+      this.mi1024x768.Index = 4;
+      this.mi1024x768.RadioCheck = true;
       this.mi1024x768.Text = "1024 x 768";
       this.mi1024x768.Click += new System.EventHandler(this.menuResolution_Click);
       // 
       // mi640x480
       // 
-      this.mi640x480.Index = 3;
+      this.mi640x480.Index = 2;
+      this.mi640x480.RadioCheck = true;
       this.mi640x480.Text = "640 x 480";
       this.mi640x480.Click += new System.EventHandler(this.menuResolution_Click);
       // 
       // mi320x240
       // 
-      this.mi320x240.Index = 2;
+      this.mi320x240.Index = 1;
+      this.mi320x240.RadioCheck = true;
       this.mi320x240.Text = "320 x 240";
       this.mi320x240.Click += new System.EventHandler(this.menuResolution_Click);
       // 
       // mi160x120
       // 
-      this.mi160x120.Index = 1;
+      this.mi160x120.Index = 0;
+      this.mi160x120.RadioCheck = true;
       this.mi160x120.Text = "160 x 120";
       this.mi160x120.Click += new System.EventHandler(this.menuResolution_Click);
       // 
-      // mi80x60
-      // 
-      this.mi80x60.Index = 0;
-      this.mi80x60.Text = "80 x 60";
-      this.mi80x60.Click += new System.EventHandler(this.menuResolution_Click);
-      // 
       // mi1280x1024
       // 
-      this.mi1280x1024.Index = 6;
+      this.mi1280x1024.Index = 5;
+      this.mi1280x1024.RadioCheck = true;
       this.mi1280x1024.Text = "1280 x 1024";
       this.mi1280x1024.Click += new System.EventHandler(this.menuResolution_Click);
-      // 
-      // mi1600x1200
-      // 
-      this.mi1600x1200.Index = 7;
-      this.mi1600x1200.Text = "1600 x 1200";
-      this.mi1600x1200.Click += new System.EventHandler(this.menuResolution_Click);
-      // 
-      // mi1920x1440
-      // 
-      this.mi1920x1440.Index = 8;
-      this.mi1920x1440.Text = "1920 x 1440";
-      this.mi1920x1440.Click += new System.EventHandler(this.menuResolution_Click);
-      // 
-      // mi2048x1536
-      // 
-      this.mi2048x1536.Index = 9;
-      this.mi2048x1536.Text = "2048 x 1536";
-      this.mi2048x1536.Click += new System.EventHandler(this.menuResolution_Click);
-      // 
-      // menuItem4
-      // 
-      this.menuItem4.Index = 10;
-      this.menuItem4.Text = "Other...";
       // 
       // MainForm
       // 
       this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-      this.ClientSize = new System.Drawing.Size(696, 368);
+      this.ClientSize = new System.Drawing.Size(312, 245);
       this.Controls.Add(this.panel1);
       this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
       this.Menu = this.mainMenu1;
@@ -273,8 +233,8 @@ namespace RateRacerGUI
 
     void adjustPreviewSize()
     {
-      int x = 16, y = 16;
-      int w = (panel1.Width - 32), h = (panel1.Height - 32);
+      int x = 4, y = 4;
+      int w = (panel1.Width - 2*x), h = (panel1.Height - 2*y);
 
       float ratio = (float)mRenderSize.Width / (float)mRenderSize.Height;
       float rw = h * ratio, rh = w / ratio;
@@ -293,7 +253,7 @@ namespace RateRacerGUI
     {
       if (showRenderWindow()) 
       {
-        mRenderForm.startRendering();
+        mRenderForm.startRendering( mRenderSize );
       }
     }
 
@@ -331,57 +291,50 @@ namespace RateRacerGUI
 
     private void menuResolution_Click(object sender, System.EventArgs e)
     {
-      if (sender.Equals(mi80x60))
-      {
-        mRenderSize.Width  = 80;
-        mRenderSize.Height = 60;
-      }
-      else if (sender.Equals(mi160x120))
+      if (sender == mi160x120)
       {
         mRenderSize.Width  = 160;
         mRenderSize.Height = 120;
       }
-      else if (sender.Equals(mi320x240))
+      else if (sender == mi320x240)
       {
         mRenderSize.Width  = 320;
         mRenderSize.Height = 240;
       }
-      else if (sender.Equals(mi640x480))
+      else if (sender == mi640x480)
       {
         mRenderSize.Width  = 640;
         mRenderSize.Height = 480;
       }
-      else if (sender.Equals(mi1024x768))
+      else if (sender == mi800x600)
+      {
+        mRenderSize.Width  = 800;
+        mRenderSize.Height = 600;
+      }
+      else if (sender == mi1024x768)
       {
         mRenderSize.Width  = 1024;
         mRenderSize.Height = 768;
       }
-      else if (sender.Equals(mi1280x1024))
+      else if (sender == mi1280x1024)
       {
         mRenderSize.Width  = 1280;
         mRenderSize.Height = 1024;
       }
-      else if (sender.Equals(mi1600x1200))
-      {
-        mRenderSize.Width  = 1600;
-        mRenderSize.Height = 1200;
-      }
-      else if (sender.Equals(mi1920x1440))
-      {
-        mRenderSize.Width  = 1920;
-        mRenderSize.Height = 1440;
-      }
-      else if (sender.Equals(mi2048x1536))
-      {
-        mRenderSize.Width  = 2048;
-        mRenderSize.Height = 1536;
-      }
+
+      mi160x120.Checked = false;
+      mi320x240.Checked = false;
+      mi640x480.Checked = false;
+      mi800x600.Checked = false;
+      mi1024x768.Checked = false;
+      mi1280x1024.Checked = false;
+      ((MenuItem)sender).Checked = true;
 
       adjustPreviewSize();
 
-      if (showRenderWindow()) 
+      //if (showRenderWindow()) 
       {
-        mRenderForm.setResolution( mRenderSize );
+        //mRenderForm.setResolution( mRenderSize );
       }
     }
 
