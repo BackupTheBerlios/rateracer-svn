@@ -34,7 +34,7 @@
 				Description="Copying plugin file..."
 				CommandLine="deployDebug.bat
 "
-				Outputs="C:\Program\AliasWavefront\Maya4.5\bin\plug-ins\chunksExport.mll"/>
+				Outputs="$(MAYA_PATH)\bin\plug-ins\chunksExport.mll"/>
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)/chunksExport.mll"
@@ -86,7 +86,7 @@
 				Description="Copying plugin file..."
 				CommandLine="deployRelease.bat
 "
-				Outputs="C:\Program\AliasWavefront\Maya4.5\bin\plug-ins\chunksExport.mll"/>
+				Outputs="$(MAYA_PATH)\bin\plug-ins\chunksExport.mll"/>
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)/chunksExport.mll"
