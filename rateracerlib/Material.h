@@ -12,8 +12,9 @@ class Material;
 
 extern Material gDefaultMaterial;
 
-// Fresnel amounts
+// Fresnel amounts (RGB?)
 const float cFresnelGlass = 0.04f;
+const float cFresnelStainless = 0.80f;
 
 // Refractive indices
 const float cRefrAir   = 1.0f;
@@ -38,6 +39,8 @@ public:
 		reflect = 0; refract = 0; refractInv = 0;
 		emitIntensity = 0.0f;
 		//lambdaShift = 0.0f;
+
+    mUseSchlickApprox = true;
 
 		mTexture = NULL;
 	}
@@ -70,6 +73,102 @@ public:
 		return diffColor;
 	}
 
+  virtual Vec3 directLight(Vec3 &p, Vec3& N, Vec3&V, Vec3& R, Vec3& L,
+    float NdotL, Vec3& matColor) const
+  {
+    Vec3 color;
+    float diffBase, specBase;
+
+    //float selfShadeFactor = NdotL;
+    float selfShadeFactor = sqrtf(NdotL);
+
+    if (anisotropy != Material::AnisotropyNone)
+    {
+      // TODO: Find some more anisotropic models, split wavelengths
+      Vec3 T;
+      //if (anisotropy == Material::AnisotropyUV) {
+      //  T = hitObject->getTangent(p);
+      //}
+      //else
+      {
+        T = cross( N, anisotropyPole ).normalizeSafely();
+        if (anisotropy == Material::AnisotropyBinormal) {
+          T = cross(N,T);
+        }
+        else if (anisotropy == Material::AnisotropyTangentBinormal) {
+          Vec3 B = cross(N,T);
+          T = (T + B).normalizeSafely();
+        }
+        //else //(anisotropy == Material::AnisotropyTangent)
+      }
+
+      float lt = dot(L,T), vt = dot(V,T); // (do not clamp these!)
+
+      float ltRoot = sqrtf(1-lt*lt);
+      float vtRoot = sqrtf(1-vt*vt);
+
+      //if (shininess > 0)
+      {
+        // dot(L,R) = 
+        specBase = ltRoot * vtRoot - lt * vt;
+      }
+
+      // dot(N,L) = 
+      diffBase = ltRoot;
+
+      // TODO: May be desirable to raise diff and spec terms to power 2..4 since
+      // most-significant normal does not account for entire lighting
+      diffBase = powf(diffBase, 4);
+      //diffBase *= diffBase; diffBase *= diffBase;
+
+      // Approximate self-shadowing...
+      diffBase *= selfShadeFactor;
+      if (diffBase <= 0.0f) {
+        diffBase = 0;
+        //continue;
+      }
+    }
+    else //(anisotropy == Material::AnisotropyNone)
+    {
+      diffBase = NdotL;
+      //if (shininess > 0)
+      {
+        specBase = dot(L,R);
+      }
+    }
+
+    if (refract == 0.0f) // allowDiffuse
+    {
+      // Diffuse lighting
+      color += diffBase * matColor;
+    }
+
+    if (shininess > 0)
+    {
+      // Specular highlight
+      if(specBase <= 0.0f) {
+        //specBase = 0;
+        return color;
+      }
+      float specPow;
+      float n = shininess;
+      if (mUseSchlickApprox) {
+        specPow = specBase / (n - n * specBase + specBase);
+      } else {
+        specPow = powf(specBase, n);
+      }
+
+      if (anisotropy != Material::AnisotropyNone) {
+        // BRDF projected area cosine dependency?!
+        specPow *= selfShadeFactor; // Approximate self-shadowing...
+      }
+
+      // TODO: fresnel-modulated?
+      color += specPow * specColor;
+    }
+    return color;
+  }
+
 	virtual void setPreviewMaterial() const
 	{
 		glColor4f(diffColor[0], diffColor[1], diffColor[2], 0.2f);
@@ -91,6 +190,7 @@ public:
 
 	Vec3 specColor;
 	float shininess;
+  bool mUseSchlickApprox;
 
 	enum AnisotropyType {
 		AnisotropyNone,

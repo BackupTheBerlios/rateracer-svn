@@ -12,7 +12,6 @@ RayEngine::RayEngine()
 
 	mMaxRecursionLevel = 15; // TODO: replace with diminishing returns
 
-	mUseSchlickApprox = true;
 	mUseFresnel = true;
 
 	mUsePathTracing = false;
@@ -46,8 +45,11 @@ float accumFunc(float t, float d, float c)
 	return 1 - 0.5f*t;
 }
 
+// FIXME need two levels : totNumBounce and numDiffuseBounce...
 Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 {
+  // Rays needed: primary, final gather / path, shadow, reflect, refract
+
 	if (level > mMaxRecursionLevel) return mScene->mBottomLevelColor;
 
 	//if (level == 0) mMaxLevel = 0;
@@ -57,15 +59,10 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 
 	dbgStoreRay(ray0);
 
-	if (hitObject == NULL) return mScene->mBackgroundColor;
+	if (hitObject == NULL) return mScene->mBackgroundColor; //BackgroundTexture/material
 
 	/////////////////////////////////////////////////////////////////////////////
-
-	const Material *material = hitObject->material;
-
-	if (material->emitIntensity > 0) {
-		return material->emitIntensity * material->emitColor;
-	}
+  // FIXME store lots in ray / hit record...
 
 	Vec3 p = ray0.hitPoint();
 	Vec3 N = hitObject->getNormal(p);
@@ -88,10 +85,34 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 		NdotV = 0; // Clamp to 90 degrees between N and V...
 	}
 
+  /////////////////////////////////////////////////////////////////////////////
+
+  Vec2 uv = hitObject->getUV(p);
+
+  // uvW local coord sys (orthonormal basis)
+  // emit() diffuse() specular() subsurface() response + direction,
+  // explicitBRDF(r,g,b)
+
+  const Material *material = hitObject->material;
+
+  Vec3 color(0,0,0); // = mScene->mBackgroundColor;
+
+  Vec3 matColor = material->getColor(p, uv);
+
+  // Debug: Early return (no shading)!
+  //return matColor;
+
+  //matColor = multiTonePaint(p, N,V);
+
+  /////////////////////////////////////////////////////////////////////////////
+
+  if (material->emitIntensity > 0) {
+    return material->emitIntensity * material->emitColor;
+  }
+
 	bool allowDirectLighting =
 		(material->refract == 0.0f || ray0.refractInsideCounter == 0); // < 1
 	// TODO: no diffuse if fresnelTerm > 99% ???
-	bool allowDiffuse = (material->refract == 0.0f);
 
 	float fresnelTerm = 0;
 	if (mUseFresnel)
@@ -113,16 +134,6 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 		}
 	}
 
-	Vec3 color(0,0,0); // = mScene->mBackgroundColor;
-
-	Vec2 uv = hitObject->getUV(p);
-	Vec3 matColor = material->getColor(p, uv);
-
-	// Debug: Early return (no shading)!
-	//return matColor;
-
-  //matColor = multiTonePaint(p, N,V);
-
 	if (material->refract > 0)
 	{
     color = handleRefraction(material, ray0, NdotV, fresnelTerm,
@@ -135,7 +146,7 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 	// TODO: reflective/refractive path tracing (specular lobe sampling)?
 
 	// Indirect light...
-	if (allowDiffuse)
+	if (material->refract == 0.0f) //allowDiffuse
 	{
 		if (!mUsePathTracing)
 		{
@@ -145,184 +156,15 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 		else if (level < 3)
 		{
 			// if (ray0.numDiffBounces = 0)
-			// Perform path tracing (integrate over hemisphere / final gathering)
-
-			int numSamples = 1;//(level == 0 ? 16 : 1);
-			float weightFactor = 1.0f / float(numSamples);
-
-			if (!mUseImplicitCosSampling)
-			{
-				Vec3 vec;
-				float NdotVec;
-				for (int i = 0; i < numSamples; i++)
-				{
-					rndUnitVec(vec);
-					NdotVec = dot(N, vec);
-					if (NdotVec < 0) { vec = -vec; NdotVec = -NdotVec; }
-
-					Ray rayPath(p, vec); rayPath.color.assign(0.5f,0.5f,0.25f);
-					rayPath.offset(cEpsilon, N);
-					Vec3 colorPath = TraceRay(rayPath, level+1);
-					color += (weightFactor * NdotVec) * compMul(matColor, colorPath);
-				}
-			}
-			else
-			{
-				Vec3 vec0, vec;
-				Vec3 U, V;
-				createONBasis(U,V,N);
-				for (int i = 0; i < numSamples; i++)
-				{
-					rndImplicitCosVec(vec0);
-					vec[0] = vec0[0] * U[0] + vec0[1] * V[0] + vec0[2] * N[0];
-					vec[1] = vec0[0] * U[1] + vec0[1] * V[1] + vec0[2] * N[1];
-					vec[2] = vec0[0] * U[2] + vec0[1] * V[2] + vec0[2] * N[2];
-
-					Ray rayPath(p, vec); rayPath.color.assign(0.5f,0.5f,0.25f);
-					rayPath.offset(cEpsilon, N);
-					Vec3 colorPath = TraceRay(rayPath, level+1);
-					color += weightFactor * compMul(matColor, colorPath);
-				}
-			}
+      int numSamples = 1;//(level == 0 ? 16 : 1);
+      color += compMul(matColor, tracePaths( numSamples, level, p, N ));
 		}
 	}
-
-	Vec3 colorSpec(0,0,0);
 
 	if (allowDirectLighting)
 	{
-		LightSource *lightSrc;
-		float lightDistanceSq;
-		Vec3 L;
-
-		float NdotL, diffBase, specBase;
-
-		// Loop over lights...
-		//if (!mUsePathTracing || level > 0)
-		for (int i = 0; i < (int)mScene->mLights.size(); i++)
-		{
-			lightSrc = mScene->mLights[i];
-
-			L = lightSrc->position - p;
-			lightDistanceSq = dot(L,L);
-			//L.normalize();
-			L *= 1.0f / sqrtf(lightDistanceSq);
-
-			NdotL = dot(N,L);
-
-			// Check if surface is facing away from light (self-shadowing)...
-			if (NdotL <= 0.0f) continue;
-
-			// Shadow ray
-			Ray rayShadow(p, L);
-			rayShadow.offset(cEpsilon, N); // TODO: Not needed because of excludeObj?!
-			Vec3 colorLight = lightSrc->color;
-			Shape *hitOccluder = findHit(rayShadow, hitObject);
-			if (hitOccluder != NULL &&
-				  rayShadow.tHit * rayShadow.tHit + cEpsilon < lightDistanceSq)
-			{
-				//return Vec3(1,1,0);
-				colorLight.setZero();
-        //continue; // FIXME!
-			}
-			else {
-				if (mScene->mUseAttenuation) {
-					colorLight *= 1.0f / (mScene->mAttC + /*mScene->mAttL * lightDistance*/ + mScene->mAttQ * lightDistanceSq);
-				}
-				if (mStoreRays) rayShadow.tHit = sqrtf(lightDistanceSq);
-			}
-
-			//if (hitOccluder != NULL) {
-			rayShadow.color.assign(0,1,0);
-			dbgStoreRay(rayShadow);
-			//}
-
-			//float selfShadeFactor = NdotL;
-			float selfShadeFactor = sqrtf(NdotL);
-
-			if (material->anisotropy != Material::AnisotropyNone)
-			{
-				// TODO: Find some more anisotropic models, split wavelengths
-				Vec3 T;
-				if (material->anisotropy == Material::AnisotropyUV) {
-					T = hitObject->getTangent(p);
-				}	else {
-					T = cross( N, material->anisotropyPole ).normalizeSafely();
-					if (material->anisotropy == Material::AnisotropyBinormal) {
-						T = cross(N,T);
-					}
-					else if (material->anisotropy == Material::AnisotropyTangentBinormal) {
-						Vec3 B = cross(N,T);
-						T = (T + B).normalizeSafely();
-					}
-					//else //(material->anisotropy == Material::AnisotropyTangent)
-				}
-
-				float lt = dot(L,T), vt = dot(V,T); // (do not clamp these!)
-
-				// dot(N,L) = 
-				diffBase = sqrtf(1-lt*lt);
-
-				//if (material->shininess > 0)
-				{
-					// dot(L,R) = 
-					specBase = diffBase * sqrtf(1-vt*vt) - lt * vt;
-				}
-
-				// TODO: May be desirable to raise diff and spec terms to power 2..4 since
-				// most-significant normal does not account for entire lighting
-				diffBase = powf(diffBase, 4);
-				//diffBase *= diffBase; diffBase *= diffBase;
-
-				// Approximate self-shadowing...
-				diffBase *= selfShadeFactor;
-				if (diffBase <= 0.0f) {
-					diffBase = 0;
-					//continue;
-				}
-			}
-			else //(material->anisotropy == Material::AnisotropyNone)
-			{
-				diffBase = NdotL;
-				//if (material->shininess > 0)
-				{
-					specBase = dot(L,R);
-				}
-			}
-
-			if (allowDiffuse)
-			{
-				// Diffuse lighting
-				color += compMul(matColor, colorLight) * diffBase;
-			}
-
-			if (material->shininess > 0)
-			{
-				// Specular highlight
-				if(specBase <= 0.0f) {
-					//specBase = 0;
-					continue;
-				}
-				float specPow;
-				float n = material->shininess;
-				if (mUseSchlickApprox) {
-					specPow = specBase / (n - n * specBase + specBase);
-				} else {
-					specPow = powf(specBase, n);
-				}
-
-				if (material->anisotropy != Material::AnisotropyNone) {
-					// BRDF projected area cosine dependency?!
-					specPow *= selfShadeFactor; // Approximate self-shadowing...
-				}
-
-				colorSpec += compMul(material->specColor, colorLight) * specPow;
-			}
-		}
+    color += directIllumination(p, N, V, R, hitObject, material, matColor);
 	}
-
-	// TODO: gather specular separately!? not fresnel-modulated? toggle parts?
-	color += colorSpec;
 
 	// FIXME...
 	fresnelTerm = max2( fresnelTerm, material->reflect );
@@ -349,6 +191,107 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 	}
 
 	return color;
+}
+
+Vec3 RayEngine::directIllumination(Vec3 &p, Vec3& N, Vec3&V, Vec3& R,
+                                   Shape *hitObject, const Material* material,
+                                   Vec3& matColor)
+{
+  Vec3 color;
+
+  LightSource *lightSrc;
+  float lightDistanceSq;
+  Vec3 L;
+  float NdotL;
+
+  // Loop over lights...
+  //if (!mUsePathTracing || level > 0)
+  for (int i = 0; i < (int)mScene->mLights.size(); i++)
+  {
+    lightSrc = mScene->mLights[i];
+
+    L = lightSrc->position - p;
+    lightDistanceSq = dot(L,L);
+    //L.normalize();
+    L *= 1.0f / sqrtf(lightDistanceSq);
+
+    NdotL = dot(N,L);
+
+    // Check if surface is facing away from light (self-shadowing)...
+    if (NdotL <= 0.0f) continue;
+
+    // Shadow ray
+    Ray rayShadow(p, L);
+    rayShadow.offset(cEpsilon, N); // TODO: Not needed because of excludeObj?!
+    Vec3 colorLight = lightSrc->color;
+    Shape *hitOccluder = findHit(rayShadow, hitObject);
+    if (hitOccluder != NULL &&
+      rayShadow.tHit * rayShadow.tHit + cEpsilon < lightDistanceSq)
+    {
+      //return Vec3(1,1,0);
+      colorLight.setZero();
+      //continue; // FIXME!
+    }
+    else {
+      if (mScene->mUseAttenuation) {
+        colorLight *= 1.0f / (mScene->mAttC + /*mScene->mAttL * lightDistance*/ + mScene->mAttQ * lightDistanceSq);
+      }
+      if (mStoreRays) rayShadow.tHit = sqrtf(lightDistanceSq);
+    }
+
+    //if (hitOccluder != NULL) {
+    rayShadow.color.assign(0,1,0);
+    dbgStoreRay(rayShadow);
+    //}
+
+    color += compMul(colorLight,
+      material->directLight(p, N, V, R, L, NdotL, matColor));
+  }
+  return color;
+}
+
+Vec3 RayEngine::tracePaths(int numSamples, int level, Vec3 p, Vec3 N)
+{
+  Vec3 color;
+
+  // Perform path tracing (integrate over hemisphere / final gathering)
+  float weightFactor = 1.0f / float(numSamples);
+
+  if (!mUseImplicitCosSampling)
+  {
+    Vec3 vec;
+    float NdotVec;
+    for (int i = 0; i < numSamples; i++)
+    {
+      rndUnitVec(vec);
+      NdotVec = dot(N, vec);
+      if (NdotVec < 0) { vec = -vec; NdotVec = -NdotVec; }
+
+      Ray rayPath(p, vec); rayPath.color.assign(0.5f,0.5f,0.25f);
+      rayPath.offset(cEpsilon, N);
+      Vec3 colorPath = TraceRay(rayPath, level+1);
+      color += (weightFactor * NdotVec) * colorPath;
+    }
+  }
+  else
+  {
+    Vec3 vec0, vec;
+    Vec3 U, V;
+    createONBasis(U,V,N);
+    for (int i = 0; i < numSamples; i++)
+    {
+      rndImplicitCosVec(vec0);
+      vec[0] = vec0[0] * U[0] + vec0[1] * V[0] + vec0[2] * N[0];
+      vec[1] = vec0[0] * U[1] + vec0[1] * V[1] + vec0[2] * N[1];
+      vec[2] = vec0[0] * U[2] + vec0[1] * V[2] + vec0[2] * N[2];
+
+      Ray rayPath(p, vec); rayPath.color.assign(0.5f,0.5f,0.25f);
+      rayPath.offset(cEpsilon, N);
+      Vec3 colorPath = TraceRay(rayPath, level+1);
+      color += weightFactor * colorPath;
+    }
+  }
+  return color;
 }
 
 Vec3 RayEngine::handleRefraction(const Material* material, Ray& ray0, float NdotV,
