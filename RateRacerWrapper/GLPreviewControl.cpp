@@ -170,9 +170,9 @@ namespace Gweronimo
 		glEnd();
 
 		RateRacerEngine::mRayEngine->dbgDrawStoredRays();
-		//RateRacerEngine::mRayEngine->dbgDrawGrid();
 
-		RateRacerEngine::mRayEngine->drawScenePreview();
+		//RateRacerEngine::mScene->dbgDrawGrid();
+		RateRacerEngine::mScene->drawScenePreview();
 	}
 
 } // namespace

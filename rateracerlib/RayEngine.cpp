@@ -3,78 +3,6 @@
 
 #include "DebugDraw.h"
 
-#include <gdiplus.h>
-using namespace Gdiplus;
-#pragma comment(lib, "gdiplus")
-
-const int N = 200;
-// Create and fill a pixel data buffer.
-UINT pixels[N][N];
-
-void testGdiPlus(HDC hdc)
-{
-	Graphics graphics(hdc);
-	//INT row, col;
-
-	/*
-	static float scale = 0.00001f;
-	for(int y = 0; y < N; y++) {
-		for(int x = 0; x < N; x++) {
-			float value = 0.5f * (1 + sinf(scale * (x*x + y*y)));
-			int val = int(255.0f * value);
-			pixels[y][x] = 0xFF000000 + (val << 16) + (val << 8) + val;
-		}
-	}
-	scale += 0.00001f; if (scale > 10.0f) scale = 0.1f;
-	*/
-
-	BitmapData bitmapData;
-	bitmapData.Width = N,
-	bitmapData.Height = N,
-	bitmapData.Stride = 4*bitmapData.Width;
-	bitmapData.PixelFormat = PixelFormat32bppARGB; 
-	bitmapData.Scan0 = (VOID*)pixels;
-	bitmapData.Reserved = NULL;
-
-	// Create a Bitmap object from a BMP file.
-	//Bitmap bitmap(L"LockBitsTest2.bmp");
-	// Display the bitmap before locking and altering it.
-	//graphics.DrawImage(&bitmap, 10, 10);
-
-	Bitmap bitmap(N, N, &graphics);
-
-	// Lock a 50x30 rectangular portion of the bitmap for writing.
-	Rect rect(0, 0, N, N);
-
-	bitmap.LockBits(
-		&rect,
-		ImageLockModeWrite | ImageLockModeUserInputBuf,
-		PixelFormat32bppARGB,
-		&bitmapData);
-
-	// Commit the changes and unlock the 50x30 portion of the bitmap.  
-	bitmap.UnlockBits(&bitmapData);
-
-	// Display the altered bitmap.
-	graphics.SetInterpolationMode(InterpolationModeNearestNeighbor); 
-	//graphics.SetInterpolationMode(InterpolationModeBicubic); 
-	graphics.DrawImage(&bitmap, 0, 0, 2*N, 2*N);
-}
-
-void updateGdiPlusBitmap(Vec3* fpix, int w, int h)
-{
-	int idx = 0;
-	for(int y = h-1; y >= 0; y--) {
-		for(int x = 0; x < w; x++) {
-			byte r = byte(255.0f * min2(fpix[idx][0], 1.0f));
-			byte g = byte(255.0f * min2(fpix[idx][1], 1.0f));
-			byte b = byte(255.0f * min2(fpix[idx][2], 1.0f));
-			pixels[y][x] = 0xFF000000 + (r << 16) + (g << 8) + b;
-			idx++;
-		}
-	}
-}
-
 RayEngine::RayEngine()
 {
 	mMaxRecursionLevel = 15; // TODO: replace with diminishing returns
@@ -84,9 +12,6 @@ RayEngine::RayEngine()
 
 	mUsePathTracing = false;
 	mUseImplicitCosSampling = true;
-
-	//mUseGrid = false;
-	//mDrawGrid = false;
 }
 
 RayEngine::~RayEngine()
@@ -95,20 +20,21 @@ RayEngine::~RayEngine()
 
 void RayEngine::init()
 {
+	/*
 	clock_t starttime, endtime;
 
 	starttime = clock();
 	printf("Preparing scene...");
 
-	InitScene();
+	//mScene->InitScene();
 
 	endtime = clock();
 	printf("finished! Elapsed time: %.2f seconds\n",
 		float(endtime - starttime) / CLOCKS_PER_SEC);
-
+	*/
 	/*
 	starttime = clock();
-	prepareGrid();
+	mScene->prepareGrid();
 	endtime = clock();
 	printf("Grid build time: %.2f seconds\n",
 		float(endtime - starttime) / CLOCKS_PER_SEC);
@@ -117,9 +43,7 @@ void RayEngine::init()
 
 void RayEngine::shutdown()
 {
-	//delete mGrid; // TODO: separate
-
-	DestroyScene();
+	//mScene->DestroyScene();
 }
 
 float accumFunc1(float t, float d, float c)
@@ -139,7 +63,7 @@ float accumFunc(float t, float d, float c)
 
 Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 {
-	if (level > mMaxRecursionLevel) return mBottomLevelColor;
+	if (level > mMaxRecursionLevel) return mScene->mBottomLevelColor;
 
 	//if (level == 0) mMaxLevel = 0;
 	//if (level > mMaxLevel) mMaxLevel = level;
@@ -152,7 +76,7 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 		float t = -ray0.ori[1] / ray0.dir[1];
 		if (t > cEpsilon && t < ray0.tHit) {
 			ray0.tHit = t;
-			hitObject = mSceneObjects[mSceneObjects.size()-1];
+			hitObject = mShapes[mShapes.size()-1];
 		}
 	}
 	else
@@ -161,9 +85,9 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 		hitObject = findHit(ray0, excludeObject);
 	}
 
-	if (mStoreRays) { mStoredRays.push_back(ray0); }
+	dbgStoreRay(ray0);
 
-	if (hitObject == NULL) return mSceneBackgroundColor;
+	if (hitObject == NULL) return mScene->mBackgroundColor;
 
 	/////////////////////////////////////////////////////////////////////////////
 
@@ -219,7 +143,7 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 		}
 	}
 
-	Vec3 color(0,0,0); // = mSceneBackgroundColor;
+	Vec3 color(0,0,0); // = mScene->mBackgroundColor;
 
 	Vec2 uv = hitObject->getUV(p);
 	Vec3 matColor = material->getColor(p, uv);
@@ -246,7 +170,7 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 				// Total internal reflection...
 				fresnelTerm = 1;
 				doRefraction = false;
-				//color = mSceneBackgroundColor;
+				//color = mScene->mBackgroundColor;
 			}
 			else
 			{
@@ -301,7 +225,7 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 		if (!mUsePathTracing)
 		{
 			// Add in global ambient light
-			color += compMul(matColor, mSceneAmbientLight);
+			color += compMul(matColor, mScene->mGlobalAmbientLight);
 		}
 		else
 		{
@@ -360,9 +284,9 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 
 		// Loop over lights...
 		//if (!mUsePathTracing || level > 0)
-		for (int i = 0; i < (int)mSceneLights.size(); i++)
+		for (int i = 0; i < (int)mScene->mLights.size(); i++)
 		{
-			lightSrc = mSceneLights[i];
+			lightSrc = mScene->mLights[i];
 
 			L = lightSrc->position - p;
 			lightDistanceSq = dot(L,L);
@@ -391,15 +315,16 @@ Vec3 RayEngine::TraceRay(Ray& ray0, int level, Shape *excludeObject)
 				colorLight.setZero();
 			}
 			else {
-				if (mUseAttenuation) {
-					colorLight *= 1.0f / (mAttC + /*mAttL * lightDistance*/ + mAttQ * lightDistanceSq);
+				if (mScene->mUseAttenuation) {
+					colorLight *= 1.0f / (mScene->mAttC + /*mScene->mAttL * lightDistance*/ + mScene->mAttQ * lightDistanceSq);
 				}
 				if (mStoreRays) rayShadow.tHit = sqrtf(lightDistanceSq);
 			}
-			if (mStoreRays /*&& hitOccluder != NULL*/) {
-				rayShadow.color.assign(0,1,0);
-				mStoredRays.push_back(rayShadow);
-			}
+
+			//if (hitOccluder != NULL) {
+			rayShadow.color.assign(0,1,0);
+			dbgStoreRay(rayShadow);
+			//}
 
 			//float selfShadeFactor = NdotL;
 			float selfShadeFactor = sqrtf(NdotL);
@@ -523,8 +448,8 @@ Shape* RayEngine::findHit(Ray& ray0, Shape *excludeObject)
 
 	Shape *o;
 	float t;
-	for (int i = 0; i < mNumSceneObjs; i++) {
-		o = mSceneObjects[i];
+	for (int i = 0; i < mScene->mNumShapes; i++) {
+		o = mScene->mShapes[i];
 		if (o == excludeObject) continue;
 		t = o->collideRay(ray0);
 		if (t > cEpsilon && t < ray0.tHit) {
@@ -535,53 +460,13 @@ Shape* RayEngine::findHit(Ray& ray0, Shape *excludeObject)
 	return hitObject;
 }
 
-/*
-void RayEngine::prepareGrid()
-{
-	Vec3 min, max;
-	calcSceneBoundingBox(min, max);
-	mGrid = new Grid(50, min, max);
-	
-	for (int i = 0; i < mNumSceneObjs; i++) {
-		mSceneObjects[i]->rasterize(mGrid);
-	}
-
-	mGrid->printGridStatistics();
-}
-*/
-
-void RayEngine::calcSceneBoundingBox(Vec3& min, Vec3& max)
-{
-	Vec3 tmpMin, tmpMax;
-
-	if (mNumSceneObjs == 0) {
-		min.assign( FLT_MAX, FLT_MAX, FLT_MAX);
-		max.assign(-FLT_MAX,-FLT_MAX,-FLT_MAX);
-		return;
-	}
-	
-	mSceneObjects[0]->calcBounds(min, max);
-	for (int i = 1; i < mNumSceneObjs; i++)
-	{
-		mSceneObjects[i]->calcBounds(tmpMin, tmpMax);
-
-		if (tmpMin[0] < min[0]) min[0] = tmpMin[0];
-		if (tmpMin[1] < min[1]) min[1] = tmpMin[1];
-		if (tmpMin[2] < min[2]) min[2] = tmpMin[2];
-
-		if (tmpMax[0] > max[0]) max[0] = tmpMax[0];
-		if (tmpMax[1] > max[1]) max[1] = tmpMax[1];
-		if (tmpMax[2] > max[2]) max[2] = tmpMax[2];
-	}
-}
-
 void RayEngine::InstantRadiosity(int N, float rho)
 {
 	float w; int reflections = 1;
 	float start; int end;
 	Vec3 L;
 	//Vec3 p, dir;
-	Ray r;
+	Ray r; r.color = Vec3(1,1,0);
 
 	Vec3 normal;
 	Photon photon;
@@ -641,7 +526,8 @@ void RayEngine::InstantRadiosity(int N, float rho)
 				}
 				*/
 				
-				mStoredRays.push_back(r);
+				dbgStoreRay(r);
+
 				if (hitObject->material->refract > 0.0f) continue;
 				/*
 				while (hitObject->material->refract > 0.0f) {
@@ -667,7 +553,7 @@ void RayEngine::InstantRadiosity(int N, float rho)
 					r.dir = T;
 					r.offset(cEpsilon, -normal);
 					hitObject = findHit(r);
-					mStoredRays.push_back(r);
+					dbgStoreRay(r);
 					if (hitObject == NULL) break;
 				}
 				if (hitObject == NULL) continue;
@@ -687,59 +573,6 @@ void RayEngine::InstantRadiosity(int N, float rho)
 	}
 }
 
-void RayEngine::drawScenePreview()
-{
-	glEnable(GL_CULL_FACE);
-	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);
-	//glColorMaterial(GL_FRONT_AND_BACK, GL_DIFFUSE);
-	glEnable(GL_COLOR_MATERIAL);
-	glEnable(GL_LIGHTING);
-
-  float ambient[4]  = { 0, 0, 0, 0 };
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient);
-	
-	for (int i = 0; i < (int)mSceneLights.size(); i++)
-	{
-		if (i >= GL_MAX_LIGHTS) break;
-		const LightSource *lightSrc = mSceneLights[i];
-		Vec3 pos = mSceneLights[i]->position;
-		Vec3 color = mSceneLights[i]->color;
-		Vec4 LightPos(pos[0], pos[1], pos[2], 1);
-		Vec4 LightCol(color[0], color[1], color[2], 1);
-		LightCol.clampVec(0,1);
-		glLightfv(GL_LIGHT0+i, GL_POSITION, (float*)&LightPos);
-		glLightfv(GL_LIGHT0+i, GL_DIFFUSE, (float*)&LightCol);
-		glLighti(GL_LIGHT0+i, GL_SPOT_CUTOFF, 180);
-		//glLightfv(GL_LIGHT0+i, GL_SPOT_DIRECTION, lightdir);
-		glEnable(GL_LIGHT0+i);
-	}
-
-	for (int i = 0; i < mNumSceneObjs; i++) {
-		if (mSceneObjects[i]->material->refract > 0) continue;
-		mSceneObjects[i]->drawPreview();
-	}
-
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
-	glDepthMask(GL_FALSE);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	//glBlendFunc(GL_ONE, GL_ONE);
-
-	glCullFace(GL_FRONT);
-	for (int i = 0; i < mNumSceneObjs; i++) {
-		if (mSceneObjects[i]->material->refract == 0) continue;
-		mSceneObjects[i]->drawPreview();
-	}
-
-	glCullFace(GL_BACK);
-	for (int i = 0; i < mNumSceneObjs; i++) {
-		if (mSceneObjects[i]->material->refract == 0) continue;
-		mSceneObjects[i]->drawPreview();
-	}
-
-	glPopAttrib();
-}
-
 void RayEngine::dbgBeginStoringRays()
 {
 	mStoreRays = true;
@@ -751,6 +584,13 @@ void RayEngine::dbgEndStoringRays()
 {
 	mStoreRays = false;
 	//mGrid->dbgEndStoringVoxels();
+}
+
+void RayEngine::dbgStoreRay(const Ray& r)
+{
+	if (mStoreRays) {
+		mStoredRays.push_back(r);
+	}
 }
 
 void RayEngine::dbgDrawStoredRays()
@@ -777,13 +617,3 @@ void RayEngine::dbgDrawStoredRays()
 	}
 	glEnd();
 }
-
-/*
-void RayEngine::dbgDrawGrid()
-{
-	if (mDrawGrid) {
-		mGrid->dbgDrawGrid();
-		mGrid->dbgDrawStoredVoxels();
-	}
-}
-*/

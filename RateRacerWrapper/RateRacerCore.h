@@ -28,7 +28,12 @@ namespace RateRacerCore
 			//	BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY);
 
 			mCamControl = new CameraControl();
+
+			mScene = new Scene();
+			mScene->InitScene();
+
 			mRayEngine = new RayEngine();
+			mRayEngine->mScene = mScene;
 			mRayEngine->init();
 
 			mImagePlane = new ImagePlane();
@@ -44,6 +49,10 @@ namespace RateRacerCore
 
 			mRayEngine->shutdown();
 			delete mRayEngine;
+
+			mScene->DestroyScene();
+			delete mScene;
+
 			delete mCamControl;
 
 			__crt_dll_terminate();
@@ -57,6 +66,7 @@ namespace RateRacerCore
 
 		static CameraControl* mCamControl;
 
+		static Scene *mScene;
 		static RayEngine *mRayEngine;
 		static ImagePlane *mImagePlane;
 	};

@@ -215,6 +215,9 @@
 			RelativePath=".\Scene.cpp">
 		</File>
 		<File
+			RelativePath=".\Scene.h">
+		</File>
+		<File
 			RelativePath=".\Stratification.h">
 		</File>
 		<File

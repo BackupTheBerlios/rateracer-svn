@@ -49,6 +49,9 @@ public:
 	void TraceScene();
 	void PostProcess();
 
+	void updateGdiPlusBitmap();
+	void displayGdiPlusBitmap(HDC hdc);
+
 	void saveImage(const char *filename = NULL);
 
 	//void DrawRandomDistribution();
@@ -60,6 +63,7 @@ public:
 	int mRenderWidth, mRenderHeight;
 	Vec3 *mPixels;
 	FatPixel *mFatPixels;
+	UINT *mBitmapPixels;
 
 	bool mUseGammaCorrection;
 	bool mUseAntiAlias;
@@ -82,8 +86,6 @@ public:
 	Vec3 mLightPosition;
 
 	void PerformTests();
-
-	int mWindowWidth, mWindowHeight;
 
 	// Render thread stuff...
 

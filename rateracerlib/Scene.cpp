@@ -1,3 +1,5 @@
+#include "Scene.h"
+
 #include "ImagePlane.h"
 
 #include "LightSource.h"
@@ -16,7 +18,17 @@ Material gDefaultMaterial;
 Vec3 gDefaultNormal;
 Vec2 gDefaultUV(0,0);
 
-void RayEngine::InitScene()
+Scene::Scene()
+{
+	//mUseGrid = false;
+	//mDrawGrid = false;
+}
+
+Scene::~Scene()
+{
+}
+
+void Scene::InitScene()
 {
 	LightSource *src;
 	Material *mat;
@@ -25,13 +37,13 @@ void RayEngine::InitScene()
 	//mBottomLevelColor.assign(1,1,0);
 	mBottomLevelColor.assign(0,0,0);
 
-	//mSceneBackgroundColor.assign(0,0,0);
-	//mSceneBackgroundColor.assign(0.5f,0.5f,0.6f);
-	mSceneBackgroundColor.assign(0.5f,0.5f,1);
-	//mSceneBackgroundColor *= 0.0f;
+	//mBackgroundColor.assign(0,0,0);
+	//mBackgroundColor.assign(0.5f,0.5f,0.6f);
+	mBackgroundColor.assign(0.5f,0.5f,1);
+	//mBackgroundColor *= 0.0f;
 
 	float ambientI = 0.05f;
-	mSceneAmbientLight.assign(ambientI,ambientI,ambientI);
+	mGlobalAmbientLight.assign(ambientI,ambientI,ambientI);
 
 	float lightI = 10000.0f;
 
@@ -43,16 +55,16 @@ void RayEngine::InitScene()
 
 	src = new LightSource(Vec3(1,8,8), Vec3(lightI, lightI, lightI));
 	//src = new LightSource(10*Vec3(1,8,-8), Vec3(lightI, lightI, lightI));
-	mSceneLights.push_back(src);
+	mLights.push_back(src);
 
 	//src = new LightSource(Vec3(8,8,8), Vec3(lightI, 0, 0));
-	//mSceneLights.push_back(src);
+	//mLights.push_back(src);
 
 	//src = new LightSource(Vec3(-8,8,8), Vec3(0, lightI, 0));
-	//mSceneLights.push_back(src);
+	//mLights.push_back(src);
 
 	//src = new LightSource(Vec3(8,-8,8), Vec3(0, 0, lightI));
-	//mSceneLights.push_back(src);
+	//mLights.push_back(src);
 /*
 	// Mega test
 	const int numberPerAxis = 5;
@@ -67,7 +79,7 @@ void RayEngine::InitScene()
 				obj->diffColor.assign(rnd(),rnd(),rnd());
 				obj->shininess = 0;
 				//obj->setRefractionIndex(cRefrWater, cRefrAir);
-				mSceneObjects.push_back(obj);
+				mShapes.push_back(obj);
 			}
 		}
 	}
@@ -76,19 +88,19 @@ void RayEngine::InitScene()
 	obj->diffColor.assign(rnd(),rnd(),rnd());
 	obj->shininess = 0;
 	//obj->setRefractionIndex(cRefrWater, cRefrAir);
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 */
 /*
 	obj = new Sphere(Vec3(0,3,4), 2.0f);
 	//obj->diffColor = mLightColor;
 	obj->emitIntensity = 10.0f;
 	obj->emitColor.assign(1,0.8f,0.3f);
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 
 	// Red diffuse (Lambert) sphere
 	obj = new Sphere(Vec3(0,0, 1.01f), 1);
 	obj->diffColor.assign(0.7f,0.2f,0.2f);
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 */
 /*
 	// Metaballs test
@@ -104,7 +116,7 @@ void RayEngine::InitScene()
 	//((MetaBalls*)obj)->addBall( Vec3(0,1,1.01f), 1);
 	obj->material = mat = new Material();
 	mat->diffColor.assign(0.7f,0.2f,0.2f);
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 */
 
 // Load some mesh object
@@ -117,7 +129,7 @@ void RayEngine::InitScene()
 	//((Model*)obj)->mMaterials[0]->shininess = 0;
 	//((Model*)obj)->mMaterials[1]->shininess = 0;
 	//((Model*)obj)->mMaterials[2]->shininess = 0;
-	//mSceneObjects.push_back(obj);
+	//mShapes.push_back(obj);
 #endif
 
 #if 0
@@ -129,7 +141,7 @@ void RayEngine::InitScene()
 	mat->anisotropy = Material::AnisotropyTangent;
 	//mat->anisotropy = Material::AnisotropyBinormal;
 	//mat->anisotropy = Material::AnisotropyTangentBinormal;
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 #endif
 
 #if 0
@@ -144,7 +156,7 @@ void RayEngine::InitScene()
 	mat->shininess = 500.0f;
 	mat->fresnelAmountAtNormalIncidence = cFresnelGlass;
 	mat->setRefractionIndex(cRefrAir, cRefrGlass);
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 #endif
 
 #if 0
@@ -152,30 +164,30 @@ void RayEngine::InitScene()
 	mat = ((Model*)obj)->mMaterials[0];
 	//mat->fresnelAmountAtNormalIncidence = 2*cFresnelGlass;
 	mat->loadTexture("textures/earth.bmp");
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 #endif
 
 	// White diffuse (Lambert) sphere
 	//obj = new Sphere(Vec3(0,0, 5), 1);
 	//obj->diffColor.assign(1,1,1);
-	//mSceneObjects.push_back(obj);
+	//mShapes.push_back(obj);
 
 	/*
 	// DOF test...
 	obj = new Sphere(Vec3(0,2.5f-2.5f,0.5f), 0.5f);
 	obj->diffColor.assign(1,0,0);
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 
 	obj = new Sphere(Vec3(0,5-2.5f,0.5f), 0.5f);
 	obj->diffColor.assign(0,1,0);
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 
 	obj = new Sphere(Vec3(0,10-2.5f,0.5f), 0.5f);
 	obj->diffColor.assign(0,0,1);
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 
 	//obj = new Sphere(Vec3(0,500-2.5f,0.5f), 120);
-	//mSceneObjects.push_back(obj);
+	//mShapes.push_back(obj);
 	*/
 
 #if 1
@@ -185,25 +197,25 @@ void RayEngine::InitScene()
 	obj->material = mat = new Material();
 	mat->diffColor.assign(1,1,1);
 	mat->shininess = 0;
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 
 	obj = new Sphere(Vec3(0,1.01f,-1.5f), 1);
 	obj->material = mat = new Material();
 	mat->diffColor.assign(1,0,0);
 	mat->shininess = 0;
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 
 	obj = new Sphere(Vec3(1.5f,1.01f,0), 1);
 	obj->material = mat = new Material();
 	mat->diffColor.assign(0,1,0);
 	mat->shininess = 0;
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 
 	obj = new Sphere(Vec3(-1.5f,1.01f,0), 1);
 	obj->material = mat = new Material();
 	mat->diffColor.assign(0,0,1);
 	mat->shininess = 0;
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 #endif
 
 #if 0
@@ -222,7 +234,7 @@ void RayEngine::InitScene()
 	mat->shininess = 0.0f;
 	mat->setRefractionIndex(cRefrGlass, cRefrAir);
 	//mat->setRefractionIndex(1,1);
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 
 	// Hollow glass sphere
 	obj = new Sphere(Vec3(-1.5f,1.01f,0), 1);
@@ -239,7 +251,7 @@ void RayEngine::InitScene()
 	//mat->lambdaShift = 0.005f;
 	mat->setRefractionIndex(cRefrAir, cRefrGlass);
 	//mat->setRefractionIndex(1,1);
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 
 	// Massive glass sphere
 	obj = new Sphere(Vec3(0,1.01f,-1.5f), 1);
@@ -254,7 +266,7 @@ void RayEngine::InitScene()
 	mat->setRefractionIndex(cRefrAir, cRefrGlass);
 	//mat->anisotropy = Material::AnisotropyTangent;
 	//mat->anisotropy = Material::AnisotropyTangentBinormal;
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 
 	// Green glossy sphere
 	obj = new Sphere(Vec3(1.5f,1.01f,0), 1);
@@ -268,7 +280,7 @@ void RayEngine::InitScene()
 	//mat->anisotropy = Material::AnisotropyTangent;
 	mat->anisotropy = Material::AnisotropyBinormal;
 	//mat->anisotropy = Material::AnisotropyTangentBinormal;
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 
 	// Reflective sphere
 	obj = new Sphere(Vec3(0,1.01f,1.5f), 1);
@@ -280,7 +292,7 @@ void RayEngine::InitScene()
 	mat->shininess = 1000.0f;
 	mat->fresnelAmountAtNormalIncidence = 0.8f;
 	mat->reflect = 0.5f;
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 #endif
 
 // Compact Disc (Anisotropic)
@@ -294,7 +306,7 @@ void RayEngine::InitScene()
 	mat->fresnelAmountAtNormalIncidence = 0.0f;
 	mat->reflect = 0.0f;
 	mat->anisotropy = Material::AnisotropyUV;
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 #endif
 
 #if 0
@@ -304,7 +316,7 @@ void RayEngine::InitScene()
 	//mat->diffColor.assign(1,0,1);
 	mat->diffColor.assign(1,1,1);
 	mat->setRefractionIndex(cRefrGlass, cRefrAir);
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 
 	// Inner spheres (water/lemonade air bubbles)
 	Vec3 middle = Vec3(-2,3.51f, 3);
@@ -315,7 +327,7 @@ void RayEngine::InitScene()
 		obj = new Sphere(middle + Vec3(1.0f*rnd0(), 4*rnd0(), 1.0f*rnd0()),
 										 0.02f + 0.05f*nrand());
 		obj->material = mat;
-		mSceneObjects.push_back(obj);
+		mShapes.push_back(obj);
 	}
 
 	// Innermost solid cylinder (water/lemonade)
@@ -327,7 +339,7 @@ void RayEngine::InitScene()
 	//mat->fresnelAmountAtNormalIncidence = cFresnelGlass;
 	mat->setRefractionIndex(cRefrAir, cRefrWater);
 	//mat->setRefractionIndex(1,1);
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 
 	// Inner cylinder (air canal)
 	obj = new Cylinder(Vec3(-2,1.01f,3), 3, 0.9f, 0.9f);
@@ -336,7 +348,7 @@ void RayEngine::InitScene()
 	mat->diffColor.assign(1,1,1);
 	mat->setRefractionIndex(cRefrGlass, cRefrAir);
 	//mat->setRefractionIndex(1,1);
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 
 	// Hollow glass cylinder
 	obj = new Cylinder(Vec3(-2,0.01f,3), 4, 1, 0.9f);
@@ -348,7 +360,7 @@ void RayEngine::InitScene()
 	mat->fresnelAmountAtNormalIncidence = cFresnelGlass;
 	mat->setRefractionIndex(cRefrAir, cRefrGlass);
 	//mat->setRefractionIndex(1,1);
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 #endif
 
 #if 1
@@ -361,7 +373,7 @@ void RayEngine::InitScene()
 	mat->fresnelAmountAtNormalIncidence = 0;
 	//mat->loadTexture("textures/glass.bmp");
 	//mat->reflect = 0.5f;
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 
 	// Floor ////////////////////////////////////////////////////////////////////
 	/*
@@ -372,7 +384,7 @@ void RayEngine::InitScene()
 	mat->shininess = 60.0f;
 	mat->fresnelAmountAtNormalIncidence = 0;
 	//mat->loadTexture("textures/glass.bmp");
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 	*/
 #endif
 
@@ -383,7 +395,7 @@ void RayEngine::InitScene()
 	mat->diffColor.assign(0,0,1);
 	//mat->shininess = 1000.0f;
 	//mat->reflect = 1.0f;
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 
 	// Walls ////////////////////////////////////////////////////////////////////
 
@@ -392,7 +404,7 @@ void RayEngine::InitScene()
 	mat->diffColor.assign(0,1,0);
 	//mat->shininess = 1000.0f;
 	//mat->reflect = 1.0f;
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 
 	obj = new Plane( Vec3(0,0,-1), -10 );
 	obj->material = mat = new Material();
@@ -401,37 +413,142 @@ void RayEngine::InitScene()
 	//mat->emitIntensity = 10.0f;
 	//mat->emitColor.assign(1,1,1);
 	//mat->reflect = 1.0f;
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 
 	obj = new Plane( Vec3(1,0,0), -10 );
 	obj->material = mat = new Material();
 	mat->diffColor.assign(1,0,0);
 	//obj->shininess = 1000.0f;
 	//mat->reflect = 1.0f;
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 
 	obj = new Plane( Vec3(-1,0,0), -10 );
 	obj->material = mat = new Material();
 	mat->diffColor.assign(1,0,1);
 	//obj->shininess = 1000.0f;
 	//mat->reflect = 1.0f;
-	mSceneObjects.push_back(obj);
+	mShapes.push_back(obj);
 #endif
 
-	mNumSceneObjs = (int)mSceneObjects.size();
+	mNumShapes = (int)mShapes.size();
 
-	//if (mUsePathTracing) mNumSceneObjs -= 5;
+	//if (mUsePathTracing) mNumShapes -= 5;
 }
 
-void RayEngine::DestroyScene()
+void Scene::DestroyScene()
 {
+	//delete mGrid;
+
 	int n;
-	for(n = 0; n < (int)mSceneLights.size(); n++)
+	for(n = 0; n < (int)mLights.size(); n++)
 	{
-		delete mSceneLights[n];
+		delete mLights[n];
 	}
-	for(n = 0; n < (int)mSceneObjects.size(); n++)
+	for(n = 0; n < (int)mShapes.size(); n++)
 	{
-		delete mSceneObjects[n];
+		delete mShapes[n];
 	}
 }
+
+void Scene::calcSceneBoundingBox(Vec3& min, Vec3& max)
+{
+	Vec3 tmpMin, tmpMax;
+
+	if (mNumShapes == 0) {
+		min.assign( FLT_MAX, FLT_MAX, FLT_MAX);
+		max.assign(-FLT_MAX,-FLT_MAX,-FLT_MAX);
+		return;
+	}
+	
+	mShapes[0]->calcBounds(min, max);
+	for (int i = 1; i < mNumShapes; i++)
+	{
+		mShapes[i]->calcBounds(tmpMin, tmpMax);
+
+		if (tmpMin[0] < min[0]) min[0] = tmpMin[0];
+		if (tmpMin[1] < min[1]) min[1] = tmpMin[1];
+		if (tmpMin[2] < min[2]) min[2] = tmpMin[2];
+
+		if (tmpMax[0] > max[0]) max[0] = tmpMax[0];
+		if (tmpMax[1] > max[1]) max[1] = tmpMax[1];
+		if (tmpMax[2] > max[2]) max[2] = tmpMax[2];
+	}
+}
+
+void Scene::drawScenePreview()
+{
+	glEnable(GL_CULL_FACE);
+	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);
+	//glColorMaterial(GL_FRONT_AND_BACK, GL_DIFFUSE);
+	glEnable(GL_COLOR_MATERIAL);
+	glEnable(GL_LIGHTING);
+
+  float ambient[4]  = { 0, 0, 0, 0 };
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient);
+	
+	for (int i = 0; i < (int)mLights.size(); i++)
+	{
+		if (i >= GL_MAX_LIGHTS) break;
+		const LightSource *lightSrc = mLights[i];
+		Vec3 pos = mLights[i]->position;
+		Vec3 color = mLights[i]->color;
+		Vec4 LightPos(pos[0], pos[1], pos[2], 1);
+		Vec4 LightCol(color[0], color[1], color[2], 1);
+		LightCol.clampVec(0,1);
+		glLightfv(GL_LIGHT0+i, GL_POSITION, (float*)&LightPos);
+		glLightfv(GL_LIGHT0+i, GL_DIFFUSE, (float*)&LightCol);
+		glLighti(GL_LIGHT0+i, GL_SPOT_CUTOFF, 180);
+		//glLightfv(GL_LIGHT0+i, GL_SPOT_DIRECTION, lightdir);
+		glEnable(GL_LIGHT0+i);
+	}
+
+	for (int i = 0; i < mNumShapes; i++) {
+		if (mShapes[i]->material->refract > 0) continue;
+		mShapes[i]->drawPreview();
+	}
+
+	glPushAttrib(GL_ALL_ATTRIB_BITS);
+	glDepthMask(GL_FALSE);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//glBlendFunc(GL_ONE, GL_ONE);
+
+	glCullFace(GL_FRONT);
+	for (int i = 0; i < mNumShapes; i++) {
+		if (mShapes[i]->material->refract == 0) continue;
+		mShapes[i]->drawPreview();
+	}
+
+	glCullFace(GL_BACK);
+	for (int i = 0; i < mNumShapes; i++) {
+		if (mShapes[i]->material->refract == 0) continue;
+		mShapes[i]->drawPreview();
+	}
+
+	glPopAttrib();
+}
+
+/*
+void Scene::prepareGrid()
+{
+	Vec3 min, max;
+	calcSceneBoundingBox(min, max);
+	mGrid = new Grid(50, min, max);
+	
+	for (int i = 0; i < mNumShapes; i++) {
+		mShapes[i]->rasterize(mGrid);
+	}
+
+	mGrid->printGridStatistics();
+}
+*/
+
+/*
+void Scene::dbgDrawGrid()
+{
+	if (mDrawGrid) {
+		mGrid->dbgDrawGrid();
+		mGrid->dbgDrawStoredVoxels();
+	}
+}
+*/

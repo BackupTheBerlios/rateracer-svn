@@ -124,11 +124,8 @@ namespace Gweronimo
 			//::StretchDIBits(realHDC, 0,0, Width, Height,
 			//								0,0, 100,100, mPixels, mBMI, DIB_RGB_COLORS, SRCCOPY);
 
-			ImagePlane *pTW = RateRacerEngine::mImagePlane;
-			if (pTW->mPixels != NULL)
-				updateGdiPlusBitmap(pTW->mPixels, pTW->mRenderWidth, pTW->mRenderHeight);
-
-			testGdiPlus(realHDC);
+			RateRacerEngine::mImagePlane->updateGdiPlusBitmap();
+			RateRacerEngine::mImagePlane->displayGdiPlusBitmap(realHDC);
 
 			e->Graphics->ReleaseHdc(hdc);
 #if 0

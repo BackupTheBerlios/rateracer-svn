@@ -7,6 +7,10 @@
 
 #include "DebugDraw.h"
 
+#include <gdiplus.h>
+using namespace Gdiplus;
+#pragma comment(lib, "gdiplus")
+
 /*
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -23,7 +27,7 @@ ImagePlane::ImagePlane()
 	mDrawRealtime = false;
 
 	mUseGammaCorrection = true;
-	mUseAntiAlias = true;
+	mUseAntiAlias = false;
 
 	mRelativeAperture = 0;//0.10f;
 	mFocusDistance = 2.0f;
@@ -357,11 +361,12 @@ void ImagePlane::PostProcess()
 
 	int x, y, idx = 0;
 	// TODO: fix border handling etc, test alternating rotated quincunx methods
-	for (y = 0; y < mRenderHeight-1; y++) {
+	for (y = 0; y < mRenderHeight; y++) {
 		for (x = 0; x < mRenderWidth; x++) {
 			//idx = x + y*mRenderWidth;
 
 			if (mUseAntiAlias && !mRayEngine->mUsePathTracing) {
+				if (y == mRenderHeight - 1) continue;
 				mPixels[idx] = 0.5f * mFatPixels[idx].color +
 											 0.125f * (mFatPixels[idx].colorExtra +
 																 mFatPixels[idx+1].colorExtra +
@@ -475,6 +480,9 @@ void ImagePlane::prepareImage(int width, int height)
 
 	delete [] mFatPixels;
 	mFatPixels = new FatPixel[mRenderWidth * mRenderHeight];
+
+	delete [] mBitmapPixels;
+	mBitmapPixels = new UINT[mRenderWidth * mRenderHeight];
 
 	//for (mTexWidth  = 1; mTexWidth  < mRenderWidth;  mTexWidth  *= 2);
 	//for (mTexHeight = 1; mTexHeight < mRenderHeight; mTexHeight *= 2);
@@ -693,3 +701,69 @@ bool ImagePlane::onCommand(UINT id, UINT ctrlNotifyCode, LONG_PTR pCtrl)
 	return TestLabWnd::onCommand(id, ctrlNotifyCode, pCtrl);
 }
 */
+
+void ImagePlane::updateGdiPlusBitmap()
+{
+	if (mPixels == NULL) return;
+	int idx = 0;
+	for(int y = mRenderHeight-1; y >= 0; y--) {
+		for(int x = 0; x < mRenderWidth; x++) {
+			byte r = byte(255.0f * min2(mPixels[idx][0], 1.0f));
+			byte g = byte(255.0f * min2(mPixels[idx][1], 1.0f));
+			byte b = byte(255.0f * min2(mPixels[idx][2], 1.0f));
+			mBitmapPixels[x + y*mRenderWidth] = 0xFF000000 + (r << 16) + (g << 8) + b;
+			idx++;
+		}
+	}
+}
+
+void ImagePlane::displayGdiPlusBitmap(HDC hdc)
+{
+	Graphics graphics(hdc);
+	//INT row, col;
+
+	/*
+	static float scale = 0.00001f;
+	for(int y = 0; y < N; y++) {
+		for(int x = 0; x < N; x++) {
+			float value = 0.5f * (1 + sinf(scale * (x*x + y*y)));
+			int val = int(255.0f * value);
+			mBitmapPixels[y][x] = 0xFF000000 + (val << 16) + (val << 8) + val;
+		}
+	}
+	scale += 0.00001f; if (scale > 10.0f) scale = 0.1f;
+	*/
+
+	BitmapData bitmapData;
+	bitmapData.Width = mRenderWidth;
+	bitmapData.Height = mRenderHeight;
+	bitmapData.Stride = 4*bitmapData.Width;
+	bitmapData.PixelFormat = PixelFormat32bppARGB; 
+	bitmapData.Scan0 = (VOID*)mBitmapPixels;
+	bitmapData.Reserved = NULL;
+
+	// Create a Bitmap object from a BMP file.
+	//Bitmap bitmap(L"LockBitsTest2.bmp");
+	// Display the bitmap before locking and altering it.
+	//graphics.DrawImage(&bitmap, 10, 10);
+
+	Bitmap bitmap(mRenderWidth, mRenderHeight, &graphics);
+
+	// Lock a rectangular portion of the bitmap for writing.
+	Rect rect(0, 0, mRenderWidth, mRenderHeight);
+
+	bitmap.LockBits(
+		&rect,
+		ImageLockModeWrite | ImageLockModeUserInputBuf,
+		PixelFormat32bppARGB,
+		&bitmapData);
+
+	// Commit the changes and unlock the portion of the bitmap.  
+	bitmap.UnlockBits(&bitmapData);
+
+	// Display the altered bitmap.
+	graphics.SetInterpolationMode(InterpolationModeNearestNeighbor); 
+	//graphics.SetInterpolationMode(InterpolationModeBicubic); 
+	graphics.DrawImage(&bitmap, 0, 0, 401, 401);
+	//graphics.DrawImage(&bitmap, 0, 0, 200, 200);
+}
