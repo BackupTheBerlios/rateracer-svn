@@ -579,6 +579,64 @@ void RayEngine::InstantRadiosity(int N, float rho)
 	}
 }
 
+Vec3 RayEngine::InstantTraceRay(Ray& ray0, int level, Vec3& lpos)
+{
+  Shape *excludeObject = NULL;
+
+  if (level > mMaxRecursionLevel) return mScene->mBottomLevelColor;
+
+  //if (level == 0) mMaxLevel = 0;
+  //if (level > mMaxLevel) mMaxLevel = level;
+
+  Shape *hitObject = findHit(ray0, excludeObject);
+
+  dbgStoreRay(ray0);
+
+  if (hitObject == NULL) return mScene->mBackgroundColor; //BackgroundTexture/material
+
+  /////////////////////////////////////////////////////////////////////////////
+  // FIXME store lots in ray / hit record...
+
+  Vec3 p = ray0.hitPoint();
+  Vec3 N = hitObject->getNormal(p);
+  //Vec3 N = hitObject->getPrimitiveNormal(p);
+  Vec3 V = -ray0.dir;
+
+  bool hitInsideOfObject = false;
+  if (dot(hitObject->getPrimitiveNormal(p), V) < 0) {
+    //return Vec3(1,1,0);
+    hitInsideOfObject = true;
+    N = -N;
+  }
+
+  // Interpolated N sometimes makes NdotV become negative! TODO: write this nicer!
+  float NdotV = dot(N,V);
+  if (NdotV < 0) {
+    //return Vec3(1,0,1);
+    //N = -N;
+    //NdotV = -NdotV;
+    NdotV = 0; // Clamp to 90 degrees between N and V...
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+
+  Vec2 uv = hitObject->getUV(p);
+
+  // uvW local coord sys (orthonormal basis)
+  // emit() diffuse() specular() subsurface() response + direction,
+  // explicitBRDF(r,g,b)
+
+  const Material *material = hitObject->material;
+
+  Vec3 color(0,0,0); // = mScene->mBackgroundColor;
+
+  Vec3 matColor = material->getColor(p, uv);
+
+  // Debug: Early return (no shading)!
+  return matColor / (1+(lpos - p).lengthSquared());
+  //return (lpos - p).length() < 0.5f ? Vec3(1,1,1) : Vec3(0,0,0);
+}
+
 void RayEngine::dbgBeginStoringRays()
 {
 	mStoreRays = true;

@@ -22,7 +22,7 @@ Vec2 gDefaultUV(0,0);
 
 Scene::Scene()
 {
-	mUseGrid = false;
+	mUseGrid = true;
 	mDrawGrid = false;
 
   mGrid = NULL;
@@ -130,12 +130,76 @@ void Scene::InitScene()
 
 #if 1
   model = new Model("models/test.chunks");
+  //model = new Model("models/lucy.chunks");
   MaterialMap::iterator m = model->mMaterialMap.begin();
   for(; m != model->mMaterialMap.end(); m++)
   {
     m->second->diffColor.assign(nrand(), nrand(), nrand());
     //printf("Material: %s - %f %f %f\n",
     //  m->first.c_str(), m->second->diffColor[0], m->second->diffColor[1], m->second->diffColor[2]);
+  }
+  mat = model->mMaterialMap["lambert1"];
+  if (mat != NULL) {
+    mat->diffColor.assign(0.7f,0.7f,0.7f);
+    mat->shininess = 500.0f;
+    mat->fresnelAmountAtNormalIncidence = cFresnelGlass;
+  }
+  //mShapes.push_back(obj);
+  model->addToShapeList(mShapes);
+  mModels.push_back(model);
+#endif
+
+#if 0
+  //model = new Model("models/test.chunks");
+  model = new Model("models/rings2.chunks");
+  mat = model->mMaterialMap["glass"];
+  if (mat != NULL) {
+    mat->diffColor.assign(1,1,1);
+    mat->shininess = 500.0f;
+    mat->fresnelAmountAtNormalIncidence = cFresnelGlass;
+    mat->setRefractionIndex(cRefrAir, cRefrGlass);
+  }
+  mat = model->mMaterialMap["wine"];
+  if (mat != NULL) {
+    mat->diffColor.assign(0.6f,0.06f,0.2f);
+    mat->shininess = 50.0f;
+    //mat->fresnelAmountAtNormalIncidence = cFresnelGlass;
+    mat->setRefractionIndex(cRefrAir, cRefrWater);
+  }
+  mat = model->mMaterialMap["wineInsideGlass"];
+  if (mat != NULL) {
+    mat->diffColor.assign(0.6f,0.06f,0.2f);
+    mat->shininess = 50.0f;
+    mat->fresnelAmountAtNormalIncidence = cFresnelGlass;
+    mat->setRefractionIndex(cRefrWater, cRefrGlass);
+  }
+  mat = model->mMaterialMap["photo"];
+  if (mat != NULL) {
+    mat->diffColor.assign(1,1,1);
+    mat->shininess = 0;
+  }
+  mat = model->mMaterialMap["frame"];
+  if (mat != NULL) {
+    mat->diffColor.assign(0.6f,0.4f,0.05f);
+    mat->shininess = 0;
+  }
+  mat = model->mMaterialMap["gold"];
+  if (mat != NULL) {
+    mat->diffColor.assign(1,0.8f,0.2f);
+    //mat->diffColor.assign(1,1,1);
+    mat->specColor.assign(1,0.8f,0.2f);
+    mat->shininess = 1000.0f;
+    mat->fresnelAmountAtNormalIncidence = 0.8f;
+    mat->reflect = 0.5f;
+  }
+  mat = model->mMaterialMap["silver"];
+  if (mat != NULL) {
+    mat->diffColor.assign(1,1,1);
+    //mat->diffColor.assign(1,1,1);
+    mat->specColor.assign(1,1,1);
+    mat->shininess = 1000.0f;
+    mat->fresnelAmountAtNormalIncidence = 0.8f;
+    mat->reflect = 0.5f;
   }
 	//mShapes.push_back(obj);
   model->addToShapeList(mShapes);
@@ -494,6 +558,7 @@ void Scene::DestroyScene()
 
 Material* Scene::getModelMaterial(int modelIdx, const char *materialName)
 {
+  if (modelIdx >= (int)mModels.size()) return NULL;
   return mModels[modelIdx]->mMaterialMap[materialName];
 }
 

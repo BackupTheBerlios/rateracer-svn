@@ -24,9 +24,9 @@ ImagePlane::ImagePlane()
 	//mDrawRealtime = false;
 
 	mUseGammaCorrection = true;
-	mUseAntiAlias = false;
+	mUseAntiAlias = true;
 
-	mRelativeAperture = 0;//0.10f;
+	mRelativeAperture = 0.0f;//0.1f;//0.10f;
 	mFocusDistance = 2.0f;
 
 	mNumDOFSamples = 1;//25;//160;
@@ -200,32 +200,32 @@ void ImagePlane::TraceScene()
 	float px, py;
 	int x, y, idx;
 
-	/*
-	if (!mDrawRealtime) {
-		const cNumPhotons = 100;
+#if 0
+	const cNumPhotons = 100;
 
-		printf("Shooting photons...");
-		mRayEngine->InstantRadiosity(cNumPhotons, 0.55f);
-		printf("done!\n");
+	printf("Shooting photons...");
+	mRayEngine->InstantRadiosity(cNumPhotons, 0.55f);
+	printf("done!\n");
 
-		float lightI = 1;
+	float lightI = 1;
 
-		mRayEngine->mAttC = lightI;
-		mRayEngine->mAttL = 0;//0.25;
-		mRayEngine->mAttQ = 1;//0.5;
-		mRayEngine->mUseAttenuation = false;
+	mRayEngine->mScene->mAttC = lightI;
+	mRayEngine->mScene->mAttL = 0;//0.25;
+	mRayEngine->mScene->mAttQ = 1;//0.5;
+	mRayEngine->mScene->mUseAttenuation = false;
 
-		mRayEngine->mUseFresnel = false;
-		mRayEngine->mUseGrid = false;
-		mUseAntiAlias = false;
+	mRayEngine->mUseFresnel = false;
+	mRayEngine->mScene->mUseGrid = true;
+	mUseAntiAlias = false;
 
-		LightSource PhotonPointLightSrc;
-		mRayEngine->mSceneLights.clear();
-		mRayEngine->mSceneLights.push_back(&PhotonPointLightSrc);
-		for (int np = cNumPhotons-1; np >= 0; np--) {
-			PhotonPointLightSrc.position = mRayEngine->mRadioSamples[np].pos;
-			PhotonPointLightSrc.color = lightI * mRayEngine->mRadioSamples[np].color;
-			float photonWeight = 1.0f / float(cNumPhotons - np);
+	LightSource PhotonPointLightSrc;
+	mRayEngine->mScene->mLights.clear();
+	mRayEngine->mScene->mLights.push_back(&PhotonPointLightSrc);
+	for (int np = cNumPhotons-1; np >= 0; np--)
+  {
+		PhotonPointLightSrc.position = mRayEngine->mRadioSamples[np].pos;
+		PhotonPointLightSrc.color = lightI * mRayEngine->mRadioSamples[np].color;
+		float photonWeight = 1.0f;//1.0f / float(cNumPhotons - np);
 		idx = 0;
 		for (y = 0, py = y0; y < mRenderHeight; y++, py += pixelSize) {
 			for (x = 0, px = x0; x < mRenderWidth; x++, px += pixelSize) {
@@ -238,7 +238,7 @@ void ImagePlane::TraceScene()
 				// Pixel center ray
 				ray.dir.assign(px,py,-1); ray.dir.normalize();
 				ray.dir = view.vecTransform(ray.dir);
-				mFatPixels[idx].colorSum += mRayEngine->TraceRay(ray, 0, excludeObj);
+				mFatPixels[idx].colorSum += mRayEngine->InstantTraceRay(ray, 0, mRayEngine->mRadioSamples[np].pos);
 				mFatPixels[idx].color = mFatPixels[idx].colorSum * photonWeight;
 
 				mPixels[idx] = mFatPixels[idx].color;
@@ -259,12 +259,11 @@ void ImagePlane::TraceScene()
         if (mRenderThreadStop) break;
 			}
 		}
-		RequestRedraw();
-		}
-		mRayEngine->mSceneLights.clear();
-		return;
+		//RequestRedraw();
 	}
-	*/
+	mRayEngine->mScene->mLights.clear();
+	return;
+#endif
 
 	int numSamples = mNumDOFSamples;//mRayEngine->mUsePathTracing ? mNumDOFSamples : 1;
 
@@ -336,7 +335,6 @@ void ImagePlane::TraceScene()
 					//mFatPixels[idx].color = Vec3(depth,-depth,level);
 				}
 				*/
-
 				ray.ori = view.transform(ray.ori);
 				ray.dir = view.vecTransform(ray.dir);
 
@@ -344,6 +342,19 @@ void ImagePlane::TraceScene()
 					dofWeight * mRayEngine->TraceRay(ray, 0, excludeObj);
 
 				mFatPixels[idx].color = mFatPixels[idx].colorSum * dofWeight2;
+
+        if (mUseAntiAlias)
+        {
+          // Pixel corner ray
+          ray.ori.setZero();
+          ray.ori = view.transform(ray.ori);
+
+          ray.dir.assign(px - halfPixelSize, py - halfPixelSize, -1);
+          ray.dir.normalize();
+          ray.dir = view.vecTransform(ray.dir);
+
+          mFatPixels[idx].colorExtra = mRayEngine->TraceRay(ray, 0, excludeObj);
+        }
 
 				// Restore centered ray origin for next pixel...
 				//ray.ori = view.transform( Vec3(0,0,0) ); // TODO: optimize

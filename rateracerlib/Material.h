@@ -68,6 +68,7 @@ public:
 	virtual Vec3 getColor(const Vec3& p, const Vec2& uv) const
 	{
 		if (mTexture != NULL) {
+      //printf("Fetching texture %f %f\n", uv[0], uv[1]);
 			return mTexture->getColor(p, uv);
 		}
 		return diffColor;

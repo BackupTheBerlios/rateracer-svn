@@ -19,6 +19,7 @@ public:
 	void shutdown();
 
 	Vec3 TraceRay(Ray& ray0, int level, Shape *excludeObject = NULL);
+  Vec3 InstantTraceRay(Ray& ray0, int level, Vec3& lpos);
 
   Vec3 tracePaths(int numSamples, int level, Vec3 p, Vec3 N);
   Vec3 directIllumination(Vec3 &p, Vec3& N, Vec3&V, Vec3& R,

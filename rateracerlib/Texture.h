@@ -48,8 +48,8 @@ public:
   {
     if (pixels != NULL) {
       //byte* pixels = (byte*)texture->getPixels();
-      int xi = int(uv[0] * width);
-      int yi = int(uv[1] * height);
+      int xi = int(uv[0] * width) % width;
+      int yi = int(uv[1] * height) % height;
       clamp(xi, 0, width-1);
       clamp(yi, 0, height-1);
       int idx = int(xi + yi*width); // * 3

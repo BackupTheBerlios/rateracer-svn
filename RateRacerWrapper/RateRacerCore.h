@@ -55,42 +55,29 @@ namespace RateRacerCore
 			mRenderProps->mImagePlane = mImagePlane;
       mRenderProps->mScene      = mScene;
 
-/*
-      // Create a Bitmap object from a BMP file.
-      Gdiplus::Bitmap bitmap(L"models/textures/Earth.bmp");
-      // Display the bitmap before locking and altering it.
-      //graphics.DrawImage(&bitmap, 10, 10);
+      Material *mat = mScene->getModelMaterial(0, "lambert1");
+      //Material *mat = mScene->getModelMaterial(0, "photo");
+      if (mat != NULL)
+      {
+        //Console::WriteLine(L"Setting texture");
+        Bitmap *bmp = new Bitmap(L"models/textures/Earth.bmp");
+        //Bitmap *bmp = new Bitmap(L"models/textures/photo.bmp");
+        BitmapData* bmpData = bmp->LockBits(
+          System::Drawing::Rectangle(0,0,bmp->Width, bmp->Height),
+          //System::Drawing::Rectangle(10,10, 1,1),
+          ImageLockMode::ReadOnly,
+          //ImageLockMode::ReadWrite,
+          PixelFormat::Format32bppArgb);
 
-      Gdiplus::BitmapData bitmapData;
-//      bitmapData.Width  = width;
-//      bitmapData.Height = height;
-//      bitmapData.Stride = 4*bitmapData.Width;
-//      bitmapData.PixelFormat = PixelFormat32bppARGB; 
-//      bitmapData.Scan0 = (VOID*)pixels;
-//      bitmapData.Reserved = NULL;
-      Rect rect(0, 0, bitmap.Width, bitmap.Height);
-      bitmap.LockBits(
-        &rect,
-        ImageLockModeRead,
-        PixelFormat32bppARGB,
-        &bitmapData);
-*/
-      Bitmap *bmp = new Bitmap(L"models/textures/Earth.bmp");
-      BitmapData* bmpData = bmp->LockBits(
-        System::Drawing::Rectangle(0,0,bmp->Width, bmp->Height),
-        //System::Drawing::Rectangle(10,10, 1,1),
-        ImageLockMode::ReadOnly,
-        //ImageLockMode::ReadWrite,
-        PixelFormat::Format32bppArgb);
+        Texture *tex = new Texture();
+        tex->createFromBitmapPixels(
+          bmpData->Width, bmpData->Height,
+          (UINT*)bmpData->Scan0.ToPointer());
 
-      Texture *tex = new Texture();
-      mScene->getModelMaterial(0, "lambert1")->mTexture = tex;
-      //mScene->mModels[0]->mMaterialMap["lambert1"]->mTexture
-      tex->createFromBitmapPixels(
-        bmpData->Width, bmpData->Height, (UINT*)bmpData->Scan0.ToPointer());
+        bmp->UnlockBits(bmpData);
 
-      bmp->UnlockBits(bmpData);
-//      bitmap.UnlockBits(&bitmapData);
+        mat->mTexture = tex;
+      }
 		}
 
 		static void finish()

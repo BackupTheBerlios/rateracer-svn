@@ -60,7 +60,7 @@ chunksExport::~chunksExport()
 {
 }
 
-MPxFileTranslator::MFileKind chunksExport::identifyFile(const MFileObject& /*fileName*/,
+MPxFileTranslator::MFileKind chunksExport::identifyFile(const MFileObject& fileObject,
 																											const char *buffer,
 																											short /*size*/) const
 {
@@ -70,6 +70,10 @@ MPxFileTranslator::MFileKind chunksExport::identifyFile(const MFileObject& /*fil
 	{
 		rval = kIsMyFileType;
 	}
+  else if (getExtension(fileObject.fullName().asChar()) == ".mesh")
+  {
+    rval = kIsMyFileType;
+  }
 	return rval;
 }
 
@@ -82,8 +86,20 @@ MStatus chunksExport::reader(	const MFileObject& fileObject,
 	char fullpath[1024];
 	strcpy( fullpath, fileObject.fullName().asChar() );
 
-	importMeshes(		fullpath, (mode == MPxFileTranslator::kImportAccessMode));
-	importSceneData(fullpath, (mode == MPxFileTranslator::kImportAccessMode));
+  MString extension = getExtension(fileObject.fullName().asChar());
+  if (extension == ".mesh")
+  {
+    importMeshFile(fullpath);
+  }
+  else if (extension == ".chunks")
+  {
+    importMeshes(		fullpath, (mode == MPxFileTranslator::kImportAccessMode));
+    importSceneData(fullpath, (mode == MPxFileTranslator::kImportAccessMode));
+  }
+  else
+  {
+    printf("File extension '%s' not recognized!\n", extension.asChar());
+  }
 
 	_flushall(); // Make sure output window is updated;
 	BringMayaOutputWindowToFront();
@@ -913,6 +929,233 @@ void chunksExport::importMeshes(const char *fullpath, bool /*doimport*/)
 	serializer.close();
 }
 
+bool skipMeshTag(FILE *infile, int& numLines)
+{
+  numLines = 0;
+  char line[1024];
+  if (fgets(line, 1024, infile) == NULL)
+  {
+    printf("Premature end of file!\n");
+    return false;
+  }
+  MString str;
+  str.set(line, (int)strlen(line) - 1);
+  if (!str.isInt())
+  {
+    printf("Failed to parse corners tag!\n");
+    return false;
+  }
+  numLines = str.asInt();
+  for (int n = 0; n < numLines; n++)
+  {
+    if (fgets(line, 1024, infile) == NULL)
+    {
+      printf("Premature end of file!\n");
+      return false;
+    }
+  }
+  return true;
+}
+
+void chunksExport::importMeshFile(const char *fullpath)
+{
+  printf("-------------------------------------------------------------------------------\n");
+
+  FILE *infile = fopen(fullpath, "rt");
+  if ( infile == NULL )
+  {
+    printf("chunksExport::importMeshFile() : Could not open input file '%s'\n", fullpath);
+    return;
+  }
+
+  printf("\nImporting mesh file '%s'\n\n", fullpath);
+
+  char line[1024];
+  MString str;
+  std::string sstr;
+
+  int numVertices = 0;
+  int numTris = 0;
+  int numMaterials = 0;
+  int numLinesSkipped = 0;
+
+  MFloatPointArray points;
+  MIntArray faceEdgeCounts;
+  MIntArray faceVerts;
+
+  while (!feof(infile))
+  {
+    if (fgets(line, 1024, infile) == NULL)
+    {
+      break;
+    }
+    str.set(line, (int)strlen(line) - 1);
+    str.toLowerCase();
+    sstr = str.asChar();
+    
+    if (sstr.find("dimension") != std::string::npos)
+    {
+      if (fgets(line, 1024, infile) == NULL)
+      {
+        printf("Premature end of file!\n");
+        break;
+      }
+      str.set(line, (int)strlen(line) - 1);
+      if (!str.isInt())
+      {
+        printf("Failed to parse dimension tag '%s'!\n", str.asChar());
+        break;
+      }
+      if (str.asInt() != 3)
+      {
+        printf("Dimension is %d, not 3!\n", str.asInt());
+        break;
+      }
+    }
+    else if (sstr.find("vertices") != std::string::npos)
+    {
+      if (fgets(line, 1024, infile) == NULL)
+      {
+        printf("Premature end of file!\n");
+        break;
+      }
+      str.set(line, (int)strlen(line) - 1);
+      if (!str.isInt())
+      {
+        printf("Failed to parse vertices tag!\n");
+        break;
+      }
+      numVertices = str.asInt();
+      printf("Num vertices: %d\n", numVertices);
+      const float cBig = 1e20f;
+      float xmin =  cBig, ymin =  cBig, zmin =  cBig;
+      float xmax = -cBig, ymax = -cBig, zmax = -cBig;
+      for (int n = 0; n < numVertices; n++)
+      {
+        if (fgets(line, 1024, infile) == NULL)
+        {
+          printf("Premature end of file!\n");
+          break;
+        }
+        float x = 0, y = 0, z = 0;
+        sscanf(line, "%e %e %e", &x, &y, &z);
+        if (xmin > x) xmin = x;
+        if (ymin > y) ymin = y;
+        if (zmin > z) zmin = z;
+        if (xmax < x) xmax = x;
+        if (ymax < y) ymax = y;
+        if (zmax < z) zmax = z;
+
+        MFloatPoint pnt( x, y, z );
+        points.append( pnt );
+      }
+      printf("BBox: (%f %f %f) - (%f %f %f)\n",
+        xmin, ymin, zmin, xmax, ymax, zmax);
+      printf("Size: (%f %f %f)\n",
+        xmax - xmin, ymax - ymin, zmax - zmin);
+    }
+    else if (sstr.find("triangles") != std::string::npos)
+    {
+      if (fgets(line, 1024, infile) == NULL)
+      {
+        printf("Premature end of file!\n");
+        break;
+      }
+      str.set(line, (int)strlen(line) - 1);
+      if (!str.isInt())
+      {
+        printf("Failed to parse triangles tag!\n");
+        break;
+      }
+      numTris = str.asInt();
+      printf("Num triangles: %d\n", numTris);
+      for (int n = 0; n < numTris; n++)
+      {
+        if (fgets(line, 1024, infile) == NULL)
+        {
+          printf("Premature end of file!\n");
+          break;
+        }
+        int v1 = 0, v2 = 0, v3 = 0, m = 0;
+        sscanf(line, "%d %d %d %d", &v1, &v2, &v3, &m);
+        if (v1 < 1 || v1 > numVertices ||
+            v2 < 1 || v2 > numVertices ||
+            v3 < 1 || v3 > numVertices)
+        {
+          printf("ERROR: vertex #%d index out of range! (%d %d %d)\n",
+            n, v1, v2, v3);
+        }
+        // Convert 1-indexed -> 0-indexed
+        faceVerts.append( v1 - 1 );
+        faceVerts.append( v2 - 1 );
+        faceVerts.append( v3 - 1 );
+        faceEdgeCounts.append( 3 );
+      }
+    }
+    else if (sstr.find("corners") != std::string::npos)
+    {
+      if (!skipMeshTag(infile, numLinesSkipped)) break;
+      printf("Num corners: %d (skipped)\n", numLinesSkipped);
+    }
+    else if (sstr.find("edges") != std::string::npos)
+    {
+      if (!skipMeshTag(infile, numLinesSkipped)) break;
+      printf("Num edges: %d (skipped)\n", numLinesSkipped);
+    }
+    else if (sstr.find("ridges") != std::string::npos)
+    {
+      if (!skipMeshTag(infile, numLinesSkipped)) break;
+      printf("Num ridges: %d (skipped)\n", numLinesSkipped);
+    }
+    else if (sstr.find("end") != std::string::npos)
+    {
+      printf("Found end tag!\n");
+    }
+    else
+    {
+      printf("// %s", line);
+    }
+  }
+
+  fclose(infile);
+
+  //int edgesPerFace = 3;
+  //int numFaceVerts = numTriangles * edgesPerFace;
+  //int numEdges = numFaceVerts / 2;
+
+  MStatus stat;
+
+  MFnMesh fnPoly;
+  MObject newTransformNode = fnPoly.create( numVertices, numTris, points, 
+    faceEdgeCounts, faceVerts, MObject::kNullObj, &stat );
+  if (stat != MS::kSuccess) {
+    printf("Could not create MFnMesh\n");
+    return;
+  }
+
+  // Primitive is created so tell shape it has changed
+  fnPoly.updateSurface();
+
+  MDGModifier dgModifier;
+  dgModifier.renameNode( newTransformNode, "pImportedMesh1" );
+  dgModifier.doIt();
+
+  // Put the polygon into a shading group
+  MString cmd ("sets -e -fe initialShadingGroup ");
+  cmd += fnPoly.name();
+  dgModifier.commandToExecute( cmd );
+
+  MFnDagNode fnDagNode( newTransformNode, &stat );
+  if ( MS::kSuccess == stat )
+  {
+    cmd = "select ";
+    cmd += fnDagNode.name();
+    dgModifier.commandToExecute( cmd );
+  }
+
+  dgModifier.doIt();
+}
+
 void chunksExport::importSceneData(	const char *fullpath, bool /*doimport*/)
 {
 }
@@ -938,17 +1181,30 @@ MString chunksExport::getPathName(const MString &fullname)
 MString chunksExport::getBaseName(const MString &filename, const char *extension)
 {
 	MString retstr;
-	int extLocation = filename.rindex('.');
-	if (extLocation > 0 &&
-			filename.substring(extLocation, filename.length() - 1) == MString(extension))
-	{
+
+  MString ext = "";
+  int extLocation = filename.rindex('.');
+  if (extLocation > 0) {
+    ext = filename.substring(extLocation, filename.length() - 1);
+  }
+
+	if (ext == MString(extension)) {
 		retstr = filename.substring(0, extLocation - 1);
 	}
-	else
-	{
+	else {
 		retstr = filename;
 	}
 	return retstr;
+}
+
+MString chunksExport::getExtension(const MString &filename)
+{
+  MString retstr = "";
+  int extLocation = filename.rindex('.');
+  if (extLocation > 0) {
+    retstr = filename.substring(extLocation, filename.length() - 1);
+  }
+  return retstr;
 }
 
 MString chunksExport::nodeName(const MObject& object )

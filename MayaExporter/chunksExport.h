@@ -16,11 +16,11 @@ public:
 	
 	static void	*creator() { return new chunksExport(); }
 	
-	MStatus     reader(const MFileObject& file,
+	MStatus     reader(const MFileObject& fileObject,
 										 const MString& optionsString,
 										 MPxFileTranslator::FileAccessMode mode);
 	
-	MStatus     writer(const MFileObject& file,
+	MStatus     writer(const MFileObject& fileObject,
 										 const MString& optionsString,
 										 MPxFileTranslator::FileAccessMode mode);
 	
@@ -30,7 +30,7 @@ public:
 	
 	MString     defaultExtension() const  { return "chunks"; }
 	
-	MFileKind   identifyFile(const MFileObject& fileName,
+	MFileKind   identifyFile(const MFileObject& fileObject,
 													 const char *buffer,
 													 short size) const;
 
@@ -65,10 +65,13 @@ private:
 	void importMeshes(		const char *fullpath, bool doimport);
 	void importSceneData(	const char *fullpath, bool doimport);
 
+  void importMeshFile(const char *fullpath);
+
 	// Helper functions
 	static void printIndentation(int nSpaces);
 	static MString getPathName(const MString &fullname);
 	static MString getBaseName(const MString &filename, const char *extension);
+  static MString getExtension(const MString &filename);
 	static MString nodeName(const MObject& object );
 	static MString nodeType(const MObject& object);
 };
