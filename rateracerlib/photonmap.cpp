@@ -3,6 +3,8 @@
 // An example implementation of the photon map data structure
 //
 // Henrik Wann Jensen - February 2001
+//
+// Corrections from errata have been added.
 //----------------------------------------------------------------------------
 
 #include <stdio.h>
@@ -304,8 +306,10 @@ void Photon_map :: locate_photons(
         parent = j;
         j += j;
       }
-      np->index[parent] = p;
-      np->dist2[parent] = dist2;
+      if (dist2 < np->dist2[parent]) {
+        np->index[parent] = p;
+        np->dist2[parent] = dist2;
+      }
 
       np->dist2[0] = np->dist2[1];
     }
@@ -325,7 +329,7 @@ void Photon_map :: store(
   const float dir[3] )
 //***************************
 {
-  if (stored_photons>max_photons)
+  if (stored_photons >= max_photons)
     return;
 
   stored_photons++;
@@ -372,7 +376,7 @@ void Photon_map :: scale_photon_power( const float scale )
     photons[i].power[1] *= scale;
     photons[i].power[2] *= scale;
   }
-  prev_scale = stored_photons;
+  prev_scale = stored_photons + 1;
 }
 
 
@@ -428,7 +432,7 @@ void Photon_map :: balance(void)
 #define swap(ph,a,b) { Photon *ph2=ph[a]; ph[a]=ph[b]; ph[b]=ph2; }
 
 // median_split splits the photon array into two separate
-// pieces around the median with all photons below the
+// pieces around the median with all photons below
 // the median in the lower half and all photons above
 // than the median in the upper half. The comparison
 // criteria is the axis (indicated by the axis parameter)
