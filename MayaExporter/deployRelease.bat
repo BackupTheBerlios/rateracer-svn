@@ -1,1 +1,2 @@
-copy Release\chunksExport.mll C:\Program\AliasWavefront\Maya4.5\bin\plug-ins
+@REM Remember to set the env. variable!
+copy Release\chunksExport.mll %MAYA_PATH%\bin\plug-ins

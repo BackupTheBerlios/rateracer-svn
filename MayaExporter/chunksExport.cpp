@@ -1,4 +1,8 @@
-#include <iostream>
+/*
+ * Iostream is pure evil
+ */
+#define REQUIRE_IOSTREAM
+
 #include <vector>
 
 #define NT_ENV

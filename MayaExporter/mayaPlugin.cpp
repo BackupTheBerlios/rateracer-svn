@@ -2,7 +2,10 @@
 // RateRacer (.chunks & .xml) Export Plugin for Maya
 //
 
-#include <iostream>
+/*
+ * Iostream is pure evil
+ */
+#define REQUIRE_IOSTREAM
 
 #pragma comment(lib, "Foundation.lib")
 #pragma comment(lib, "OpenMayaUI.lib")
@@ -39,6 +42,7 @@ char *chunksPluginVersion = "CHNK0.01";
 
 __declspec( dllexport ) MStatus initializePlugin(MObject obj)
 {
+
 	MStatus	status, lasterror = MS::kSuccess;
 	
 	MFnPlugin plugin(obj, "Rate Racer Export Plugin for Maya", chunksPluginVersion);
@@ -49,7 +53,11 @@ __declspec( dllexport ) MStatus initializePlugin(MObject obj)
 		chunksExport::creator,
 		"chunksExportOptions", "",
 		true);
-	if (!status) { std::cerr << status; lasterror = status; }
+
+	if (!status) { 
+	  printf( "error: %s\n", status.errorString( ).asChar( ) );
+	  lasterror = status;
+	}
 
 	// Set the mel scripts to be run when the plugin is loaded / unloaded
 	//status = plugin.registerUI("chunksExportCreateUI", "chunksExportDeleteUI");
@@ -62,12 +70,16 @@ __declspec( dllexport ) MStatus initializePlugin(MObject obj)
 
 __declspec( dllexport ) MStatus uninitializePlugin(MObject obj)
 {
+
 	MStatus	status, lasterror = MS::kSuccess;
 
 	MFnPlugin plugin(obj);
-	
 	status = plugin.deregisterFileTranslator("chunksExport");
-	if (!status) { std::cerr << status; lasterror = status; }
+
+	if (!status) { 
+	  printf( "error: %s\n", status.errorString( ).asChar( ) );
+	  lasterror = status;
+	}
 
 	return lasterror;
 }

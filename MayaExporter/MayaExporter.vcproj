@@ -20,7 +20,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..;C:\Program\AliasWavefront\Maya4.5\include"
+				AdditionalIncludeDirectories=".."
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MAYAEXPORT_EXPORTS"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -32,13 +32,14 @@
 			<Tool
 				Name="VCCustomBuildTool"
 				Description="Copying plugin file..."
-				CommandLine="deployDebug.bat"
+				CommandLine="deployDebug.bat
+"
 				Outputs="C:\Program\AliasWavefront\Maya4.5\bin\plug-ins\chunksExport.mll"/>
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)/chunksExport.mll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="C:\Program\AliasWavefront\Maya4.5\lib"
+				AdditionalLibraryDirectories=""
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)/MayaExporter.pdb"
 				SubSystem="2"
@@ -73,7 +74,7 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..;C:\Program\AliasWavefront\Maya4.5\include"
+				AdditionalIncludeDirectories=".."
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MAYAEXPORT_EXPORTS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
