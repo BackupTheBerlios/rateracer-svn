@@ -783,57 +783,32 @@ void TraceWnd::saveImage(const char *filename)
 
 void TraceWnd::PerformTests()
 {
-	/*
-	int numIters = 100000;
+/*
+  volatile clock_t nowt, startt;
+	int numIters = 100000000;
 
-	Timer timer;
-	volatile double nowtime;
-	volatile clock_t nowt, startt;
+  volatile unsigned long xRnd;
+  unsigned long seed = clock();
+  printf("Seed = %d\n", seed);
 
-	timer.resetAndStart();
+	srand( seed );
 	startt = clock();
 	for (int n = 0; n < numIters; n++) {
-		nowtime = timer.getSeconds();
+		xRnd = rand();
 	}
 	nowt = clock();
-	nowtime = timer.getSeconds();
-	printf("Time to do %d calls to Timer.getSeconds(): %f / %.3f seconds.\n",
-		numIters, nowtime, float(nowt - startt) / float(CLOCKS_PER_SEC));
-	printf("\n");
-
-	timer.resetAndStart();
-	startt = clock();
-	for (int n = 0; n < numIters; n++) {
-		nowt = clock();
-	}
-	nowt = clock();
-	nowtime = timer.getSeconds();
-	printf("Time to do %d calls to clock(): %f / %.3f seconds.\n",
-		numIters, nowtime, float(nowt - startt) / float(CLOCKS_PER_SEC));
-	printf("\n");
-
-	volatile float xRnd;
-
-	numIters = 10000000;
-
-	srand(clock());
-	startt = clock();
-	for (int n = 0; n < numIters; n++) {
-		xRnd = rnd();
-	}
-	nowt = clock();
-	printf("Time to do %d calls to rnd(): %.3f seconds.\n",
+	printf("Time to do %d calls to rand(): %.3f seconds.\n",
 		numIters, float(nowt - startt) / float(CLOCKS_PER_SEC));
 
-	nseed(clock());
+	init_genrand( seed );
 	startt = clock();
 	for (int n = 0; n < numIters; n++) {
-		xRnd = nrand();
+		xRnd = genrand_int32();
 	}
 	nowt = clock();
-	printf("Time to do %d calls to nrand(): %.3f seconds.\n",
+	printf("Time to do %d calls to genrand_int32(): %.3f seconds.\n",
 		numIters, float(nowt - startt) / float(CLOCKS_PER_SEC));
-	*/
+*/
 }
 
 void TraceWnd::onChar(UINT nChar, UINT nRepCnt, UINT nFlags)
