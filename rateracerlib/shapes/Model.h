@@ -86,6 +86,13 @@ public:
     }
 	}
 
+  void addToShapeList(std::vector<Shape*>& shapes)
+  {
+		for (int n = 0; n < (int)mMeshes.size(); n++) {
+			mMeshes[n]->addToShapeList(shapes);
+		}
+  }
+
 	int mTotalNumTris;
 
   typedef std::map< std::string, Material* > MaterialMap;

@@ -125,6 +125,13 @@ public:
     }
   }
 
+  void addToShapeList(std::vector<Shape*>& shapes)
+  {
+		for (int n = 0; n < (int)mTriangleGroups.size(); n++) {
+			mTriangleGroups[n]->addToShapeList(shapes);
+		}
+  }
+
   std::string mMeshName;
 	std::vector<Vec3> mVertices;
 	std::vector<Vec3> mNormals;

@@ -22,8 +22,10 @@ Vec2 gDefaultUV(0,0);
 
 Scene::Scene()
 {
-	mUseGrid = true;
+	mUseGrid = false;
 	mDrawGrid = false;
+
+  mGrid = NULL;
 }
 
 Scene::~Scene()
@@ -35,6 +37,9 @@ void Scene::InitScene()
 	LightSource *src;
 	Material *mat;
 	Shape *obj;
+  Model *model;
+
+  setRandomSeed();
 
 	//mBottomLevelColor.assign(1,1,0);
 	mBottomLevelColor.assign(0,0,0);
@@ -124,9 +129,7 @@ void Scene::InitScene()
 // Load some mesh objects
 
 #if 1
-	obj = new Model("models/test.chunks");
-  setRandomSeed();
-  Model *model = (Model*)obj;
+  model = new Model("models/test.chunks");
   MaterialMap::iterator m = model->mMaterialMap.begin();
   for(; m != model->mMaterialMap.end(); m++)
   {
@@ -134,7 +137,9 @@ void Scene::InitScene()
     //printf("Material: %s - %f %f %f\n",
     //  m->first.c_str(), m->second->diffColor[0], m->second->diffColor[1], m->second->diffColor[2]);
   }
-	mShapes.push_back(obj);
+	//mShapes.push_back(obj);
+  model->addToShapeList(mShapes);
+  mModels.push_back(model);
 #endif
 
 #if 0
@@ -447,8 +452,32 @@ void Scene::InitScene()
 #endif
 
 	mNumShapes = (int)mShapes.size();
-
 	//if (mUsePathTracing) mNumShapes -= 5;
+
+  calcSceneBoundingBox(mBoundingBox.pp[0], mBoundingBox.pp[1]);
+
+	//starttime = clock();
+	prepareGrid();
+	//endtime = clock();
+	//printf("Grid build time: %.2f seconds\n",
+	//float(endtime - starttime) / CLOCKS_PER_SEC);
+
+  printf("numshapes: %d\n", mNumShapes);
+
+  // BVH code below ///////////////////////////////////////////////////////
+
+  typedef Shape* ShapePtr;
+  Shape** shapes = new ShapePtr[mNumShapes];
+
+  printf("copying: %d\n", mNumShapes);
+  for (int n = 0; n < mNumShapes; n++)
+    shapes[n] = mShapes[n];
+  mShapes.clear();
+
+  printf("numshapes: %d\n", mNumShapes);
+
+  mShapes.push_back(BVH::buildBVH(shapes, mNumShapes, 0) );
+	mNumShapes = (int)mShapes.size();
 }
 
 void Scene::DestroyScene()
@@ -550,9 +579,7 @@ void Scene::drawScenePreview()
 
 void Scene::prepareGrid()
 {
-	Vec3 min, max;
-	calcSceneBoundingBox(min, max);
-	mGrid = new Grid(50, min, max);
+	mGrid = new Grid(50, mBoundingBox.pp[0], mBoundingBox.pp[1]);
 	
 	for (int i = 0; i < mNumShapes; i++) {
 		mShapes[i]->rasterize(mGrid);

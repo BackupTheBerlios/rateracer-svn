@@ -170,6 +170,7 @@ public:
 
 	void drawBoundingBoxes()
 	{
+    return;
 		//material->setPreviewMaterial();
 		Vec3 min, max;
 		calcBounds(min, max);

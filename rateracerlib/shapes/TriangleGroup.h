@@ -18,6 +18,13 @@ public:
   {
   }
 
+  void addToShapeList(std::vector<Shape*>& shapes)
+  {
+		for (int n = 0; n < (int)mTriangles.size(); n++) {
+			shapes.push_back( mTriangles[n] );
+		}
+  }
+
 	Triangle *lastHit;
 
 	int getNumTris()

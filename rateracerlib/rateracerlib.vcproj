@@ -179,6 +179,12 @@
 			</File>
 		</Filter>
 		<File
+			RelativePath=".\BoundVolHier.cpp">
+		</File>
+		<File
+			RelativePath=".\BoundVolHier.h">
+		</File>
+		<File
 			RelativePath=".\Camera.h">
 		</File>
 		<File

@@ -2,6 +2,7 @@
 #include "Stratification.h"
 
 #include "Grid.h"
+#include "BoundVolHier.h"
 
 #include "DebugDraw.h"
 

@@ -7,6 +7,10 @@
 #include "shapes/Shape.h"
 #include "LightSource.h"
 
+#include "BoundVolHier.h"
+
+class Model;
+
 struct Photon {
 	Vec3 pos;
 	Vec3 color;
@@ -35,6 +39,8 @@ public:
 	std::vector<Shape*> mShapes;
 	int mNumShapes;
 
+	std::vector<Model*> mModels;
+
 	Vec3 mBackgroundColor;
 	Vec3 mBottomLevelColor;
 
@@ -42,4 +48,6 @@ public:
 
 	bool mUseAttenuation;
 	float mAttC, mAttL, mAttQ;
+
+  BBox mBoundingBox;
 };
