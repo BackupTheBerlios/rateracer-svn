@@ -17,7 +17,6 @@ TODO:
 - mark rectangle for subrendering!
 - (turn slow stuff off while changing view?)
 - rerender when view has changed and stabilized, auto-hide preview
-- sync blitting to texture in realtime mode
 - better preview: fix all shape types
 - render progress/timing in gl window
 - camera class (incl ray handling), colorRGB class?
@@ -160,9 +159,6 @@ void TraceWnd::SetupOpenGL()
 
 	prepareImage(mRenderWidth, mRenderHeight);
 
-	//glGenTextures(1, &mTexObj);
-	//prepareTexture();
-
 	//mRayEngine->init();
 
 	DWORD dwThreadId;
@@ -181,8 +177,6 @@ void TraceWnd::ShutdownOpenGL()
 
 	delete [] mPixels;
 	delete [] mFatPixels;
-
-	//glDeleteTextures(1, &mTexObj);
 
 	//TestLabWnd::ShutdownOpenGL();
 }
@@ -215,8 +209,6 @@ void TraceWnd::RenderScene(int mWindowWidth, int mWindowHeight)
 	//for (int n = 0; n < mRenderHeight * mRenderWidth; n++) {
 	//	mPixels[n].assign(0,0,0);
 	//}
-	//updateTexture();
-	//drawTexture(orix, oriy, sizex, sizey);
 
 	//updateGdiPlusBitmap(mPixels, mRenderWidth, mRenderHeight);
 
@@ -674,45 +666,6 @@ void TraceWnd::drawPreview(int orix, int oriy, int sizex, int sizey)
 	mRayEngine->drawScenePreview();
 }
 
-/*
-void TraceWnd::prepareTexture()
-{
-	Vec3 *tmpbuf = new Vec3[mTexWidth * mTexHeight];
-	memset(tmpbuf, 0, mTexWidth * mTexHeight);
-	glBindTexture(GL_TEXTURE_2D, mTexObj);
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // Needed for GL_RGB, default is 4 for GL_RGBA
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mTexWidth,mTexHeight, 0,
-							 GL_RGB, GL_FLOAT, tmpbuf);
-	delete [] tmpbuf;
-}
-
-void TraceWnd::updateTexture()
-{
-	glBindTexture(GL_TEXTURE_2D, mTexObj);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0,0, mRenderWidth,mRenderHeight, GL_RGB, GL_FLOAT, mPixels);
-}
-
-void TraceWnd::drawTexture(int orix, int oriy, int sizex, int sizey)
-{
-	GLint filter = GL_NEAREST; //GL_LINEAR
-	float umax = float(mRenderWidth -1) / float(mTexWidth);
-	float vmax = float(mRenderHeight-1) / float(mTexHeight);
-
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
-	glEnable(GL_TEXTURE_2D);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
-	glBegin(GL_QUADS);
-		glTexCoord2f(   0,   0); glVertex2i(orix - 1,     oriy - 1);
-		glTexCoord2f(umax,   0); glVertex2i(orix + sizex, oriy - 1);
-		glTexCoord2f(umax,vmax); glVertex2i(orix + sizex, oriy + sizey);
-		glTexCoord2f(   0,vmax); glVertex2i(orix - 1,     oriy + sizey);
-	glEnd();
-	glPopAttrib();
-}
-*/
-
 void TraceWnd::prepareImage(int width, int height)
 {
 	mCritSecPixels.lock();
@@ -898,7 +851,6 @@ void TraceWnd::onChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 			} else {
 				prepareImage(200, 150);
 			}
-			//prepareTexture();
 			SetRenderThreadRedraw(true);
 			break;
 		case 'O' :

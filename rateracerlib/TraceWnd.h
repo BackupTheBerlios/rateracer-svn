@@ -95,14 +95,6 @@ public:
 
 	Vec3 mLightPosition;
 
-	/*
-	void prepareTexture();
-	void updateTexture();
-	void drawTexture(int orix, int oriy, int sizex, int sizey);
-	unsigned int mTexObj;
-	int mTexWidth, mTexHeight;
-	*/
-
 	void PerformTests();
 
 	int mWindowWidth, mWindowHeight;
