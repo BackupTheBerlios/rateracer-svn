@@ -1,0 +1,14 @@
+MayaExporter (chunksExport) TODO list
+-------------------------------------
+
+- Use environment variable for path to Maya in project settings!
+
+- Non-triangulated meshes are currently not handled:
+- clone mesh & triangulate automatically?!
+
+- export mesh transform (fnMesh.transformationMatrix() ?)
+- make error handling more robust, remove debug print stuff
+
+- implement cameras in XML
+- implement lights in XML
+

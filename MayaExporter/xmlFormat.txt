@@ -1,0 +1,55 @@
+
+(XML) materials, lights, cameras ('skin') file: .xml
+---------------------------------------------------
+
+<scenedata>
+	<camera id="" type="perspective/ortho/...">
+		<position x="1.0" y="1.0" z="1.0" />
+		<direction x="1.0" y="1.0" z="1.0" />
+		<up x="1.0" y="1.0" z="1.0" />
+		<fov horiz="1.0" vert="1.0" />
+	</camera>
+
+	<lightsource id="" type="omni/spot/spherical/directional/area/...">
+		<position x="1.0" y="1.0" z="1.0" />
+		<direction x="1.0" y="1.0" z="1.0" />
+		<radius value="1.0" />
+		<samples u="1" v="1" />
+	</lightsource>
+	
+	<material id="" type="lambert/reflect/phong/blinn/...">
+		<ambient r="1.0" g="1.0" b="1.0">
+			<texture url="" />
+		</ambient>
+		<diffuse r="1.0" g="1.0" b="1.0">
+			<texture url="" />
+		</diffuse>
+		<diffuseCoeff value="1.0">
+			<texture url="" />
+		</diffuseCoeff>
+		<specular r="1.0" g="1.0" b="1.0">
+			<texture url="" />
+		</specular>
+		<specularPower value="1.0">
+			<texture url="" />
+		</specularPower>
+		<specularRollOff value="1.0">
+			<texture url="" />
+		</specularRollOff>
+		<emission r="1.0" g="1.0" b="1.0">
+			<texture url="" />
+		</emission>
+		<transparency r="1.0" g="1.0" b="1.0">
+			<texture url="" />
+		</transparency>
+		<glow value="1.0" />
+		<refraction limit="1" index="1.0" />
+		<reflection limit="1" />
+		<reflectivity value="1.0">
+			<texture url="" />
+		</reflectivity>
+		<bump>
+			<texture url="" />
+		</bump>
+	</material>
+</scenedata>

@@ -1,0 +1,42 @@
+
+(Binary) geometry file: <filename>.chunks
+-----------------------------------------
+
+char format[8] = "!CHUNKS!" // No null-termination here!
+
+int numChunks
+Chunk chunks[numChunks] ::
+{
+	int chunkType
+	
+	byte stringLength
+	char chunkName[stringLength] // Includes null-termination!
+			
+	int chunkSize
+	byte chunkData[chunkSize] ::
+	{
+		when chunkType = CHUNKTYPE_MESH (1) :
+		[
+			int numVertices
+			float vertices[3*numVertices]
+			
+			int numNormals
+			float normals[3*numNormals]
+			
+			int numUVs
+			float uvs[2*numUVs]
+			
+			float numGroups
+			Group groups[numGroups] ::
+			{
+				byte stringLength
+				char materialName[stringLength] // Includes null-termination!
+				
+				int numTriangles
+				int vertexIndices[3*numTriangles]
+				int normalIndices[3*numTriangles]
+				int uvIndices[3*numTriangles]
+			}
+		]
+	}
+}
