@@ -10,3 +10,4 @@ RateRacer project log
 - Added camera export 
 - Added light sources (point light and spherical light)
 - Added untested code for extracting texture nodes
+- Added extraction of triangles from untriangulated polygons
