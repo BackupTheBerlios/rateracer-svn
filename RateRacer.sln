@@ -1,0 +1,47 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateRacerGUI", "RateRacerGUI\RateRacerGUI.csproj", "{88068F0E-BE30-4DAB-8A66-E3C342290DD0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{EFF2F5A2-D926-4951-9EA2-2C1563B4E95C} = {EFF2F5A2-D926-4951-9EA2-2C1563B4E95C}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rateracerlib", "rateracerlib\rateracerlib.vcproj", "{EF4A6B81-336A-45FC-93E8-E0CA8A55A8DC}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RateRacerWrapper", "RateRacerWrapper\RateRacerWrapper.vcproj", "{EFF2F5A2-D926-4951-9EA2-2C1563B4E95C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{EF4A6B81-336A-45FC-93E8-E0CA8A55A8DC} = {EF4A6B81-336A-45FC-93E8-E0CA8A55A8DC}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "chunkslib", "chunks\chunkslib.vcproj", "{7C57B6FA-27EC-4422-8ACC-59AC6EF8B7C2}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{88068F0E-BE30-4DAB-8A66-E3C342290DD0}.Debug.ActiveCfg = Debug|.NET
+		{88068F0E-BE30-4DAB-8A66-E3C342290DD0}.Debug.Build.0 = Debug|.NET
+		{88068F0E-BE30-4DAB-8A66-E3C342290DD0}.Release.ActiveCfg = Release|.NET
+		{88068F0E-BE30-4DAB-8A66-E3C342290DD0}.Release.Build.0 = Release|.NET
+		{EF4A6B81-336A-45FC-93E8-E0CA8A55A8DC}.Debug.ActiveCfg = Debug|Win32
+		{EF4A6B81-336A-45FC-93E8-E0CA8A55A8DC}.Debug.Build.0 = Debug|Win32
+		{EF4A6B81-336A-45FC-93E8-E0CA8A55A8DC}.Release.ActiveCfg = Release|Win32
+		{EF4A6B81-336A-45FC-93E8-E0CA8A55A8DC}.Release.Build.0 = Release|Win32
+		{EFF2F5A2-D926-4951-9EA2-2C1563B4E95C}.Debug.ActiveCfg = Debug|Win32
+		{EFF2F5A2-D926-4951-9EA2-2C1563B4E95C}.Debug.Build.0 = Debug|Win32
+		{EFF2F5A2-D926-4951-9EA2-2C1563B4E95C}.Release.ActiveCfg = Release|Win32
+		{EFF2F5A2-D926-4951-9EA2-2C1563B4E95C}.Release.Build.0 = Release|Win32
+		{7C57B6FA-27EC-4422-8ACC-59AC6EF8B7C2}.Debug.ActiveCfg = Debug|Win32
+		{7C57B6FA-27EC-4422-8ACC-59AC6EF8B7C2}.Debug.Build.0 = Debug|Win32
+		{7C57B6FA-27EC-4422-8ACC-59AC6EF8B7C2}.Release.ActiveCfg = Release|Win32
+		{7C57B6FA-27EC-4422-8ACC-59AC6EF8B7C2}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal
