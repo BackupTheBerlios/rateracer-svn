@@ -34,7 +34,7 @@
 				Description="Copying plugin file..."
 				CommandLine="deployDebug.bat
 "
-				Outputs="$(MAYA_PATH)\bin\plug-ins\chunksExport.mll"/>
+				Outputs="$(MAYA_PATH)\bin\plug-ins\tetraPlugin.mll"/>
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)/tetraPlugin.mll"
@@ -86,7 +86,7 @@
 				Description="Copying plugin file..."
 				CommandLine="deployRelease.bat
 "
-				Outputs="$(MAYA_PATH)\bin\plug-ins\chunksExport.mll"/>
+				Outputs="$(MAYA_PATH)\bin\plug-ins\tetraPlugin.mll"/>
 			<Tool
 				Name="VCLinkerTool"
 				OutputFile="$(OutDir)/tetraPlugin.mll"

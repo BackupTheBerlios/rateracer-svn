@@ -123,8 +123,8 @@ MStatus stlPlugin::writer( const MFileObject &fileObject,
 	
 	exportMeshes(fullpath, (mode == MPxFileTranslator::kExportActiveAccessMode));
 
-  //strcat( fullpath, ".geo" );
-	//exportGeo(fullpath, (mode == MPxFileTranslator::kExportActiveAccessMode));
+  strcat( fullpath, ".vol" );
+	exportVol(fullpath, (mode == MPxFileTranslator::kExportActiveAccessMode));
 
 	MAnimControl::setCurrentTime(origTime);
 	
@@ -323,7 +323,7 @@ void stlPlugin::exportMeshes(const char *fullpath, bool exportSelectedOnly)
 					continue;
 				}
 
-				if (maxNumTrisPerPolygon < triangle_count )
+				if (maxNumTrisPerPolygon < triangle_count)
 					maxNumTrisPerPolygon = triangle_count;
 
 				numTris += triangle_count;
@@ -423,14 +423,14 @@ void stlPlugin::exportMeshes(const char *fullpath, bool exportSelectedOnly)
 	fclose(outfile);
 }
 
-void stlPlugin::exportGeo(const char *fullpath, bool exportSelectedOnly)
+void stlPlugin::exportVol(const char *fullpath, bool exportSelectedOnly)
 {
 	printf("-------------------------------------------------------------------------------\n");
 
   FILE *outfile = fopen(fullpath, "wt");
   if ( outfile == NULL )
 	{
-		printf("stlPlugin::exportMeshes() : Could not open output file '%s'\n", fullpath);
+		printf("stlPlugin::exportVol() : Could not open output file '%s'\n", fullpath);
 		return;
 	}
 
@@ -441,6 +441,7 @@ void stlPlugin::exportGeo(const char *fullpath, bool exportSelectedOnly)
 	MSelectionList selectionList;
 	MGlobal::getActiveSelectionList(selectionList);
 
+	int totalNumTriangles = 0;
 	int totalNumPolys = 0;
 
 	MItDag dagIterator(MItDag::kDepthFirst, MFn::kMesh);
@@ -519,24 +520,32 @@ void stlPlugin::exportGeo(const char *fullpath, bool exportSelectedOnly)
 		fnMesh.getNormals( normalArray, coordSpace );
 		fnMesh.getUVs( texUArray, texVArray );
 
-		//int n;
-    int g;
-    //int uvIdx;
-		std::map< int, int > lookup_map;
+		int g, triangle_count;
+		//std::map< int, int > lookup_map;
+		int nontriangulated = 0;
 
 		int numVertices = fnMesh.numVertices();
 		int numNormals = fnMesh.numNormals();
 		int numUVs = fnMesh.numUVs();
 
-    fprintf(outfile, "algebraic3d\n");
+    fprintf(outfile, "mesh3d\n");
+    fprintf(outfile, "dimension\n");
+    fprintf(outfile, "3\n\n");
 
-    fprintf(outfile, "solid poly = polyhedron(\n");
+    fprintf(outfile, "points\n");
+    fprintf(outfile, "%d\n", numVertices);
 
 		for (int n = 0; n < numVertices; n++) {
-      fprintf(outfile, "  %f, %f, %f;\n",
+      fprintf(outfile, "  %f %f %f\n",
         pointArray[n].x, pointArray[n].y, pointArray[n].z);
 		}
-    fprintf(outfile, " ");
+    fprintf(outfile, "\n");
+
+    fprintf(outfile, "volumeelements\n");
+    fprintf(outfile, "0\n\n");
+
+    fprintf(outfile, "edgesegments\n");
+    fprintf(outfile, "0\n\n");
 
 		for (g = 0; g < (int)shaderSets.length(); g++)
 		{
@@ -554,35 +563,98 @@ void stlPlugin::exportGeo(const char *fullpath, bool exportSelectedOnly)
 
 			MItMeshPolygon faceIter( currentPath, faceGroups[g] );
 
+			int numTris = 0;
 			int numPolys = 0;
+			int maxNumTrisPerPolygon = 0;
 			for( ; !faceIter.isDone(); faceIter.next() )
 			{
+				if (!faceIter.hasValidTriangulation()) {
+					continue;
+				}
+
+				triangle_count = 0;
+				/*status =*/ faceIter.numTriangles(triangle_count);
+				if (triangle_count == 0) {
+					continue;
+				}
+
+				if (maxNumTrisPerPolygon < triangle_count)
+					maxNumTrisPerPolygon = triangle_count;
+
+				numTris += triangle_count;
 				numPolys++;
 			}
+			totalNumTriangles += numTris;
 			totalNumPolys += numPolys;
 
-			printf("Group: %d polygons.\n", numPolys);
+			printf("Group: %d triangles in %d polygons (max. %d tris per poly).\n",
+				numTris, numPolys, maxNumTrisPerPolygon);
 
-			//int index = 0;
+      fprintf(outfile, "surfaceelements\n");
+      fprintf(outfile, "%d\n", numTris);
+
 			for( faceIter.reset(); !faceIter.isDone(); faceIter.next() )
 			{
-				int idxCount = faceIter.polygonVertexCount();
+				if (!faceIter.hasValidTriangulation()) {
+					//printf("* Warning: Skipping polygon %i since it has no valid triangulation.\n", faceIter.index());
+					nontriangulated++;
+					continue;
+				}
+
+        // Domain is per polygon, not per triangle...
+        int surface_nr = 1, boundary_condition_nr = 1;
+        int domainOutside = 0, domainInside = 0;
+        fnMesh.getIntBlindData(faceIter.index(), MFn::kMeshPolygonComponent, 1001, "matOut", domainOutside);
+        fnMesh.getIntBlindData(faceIter.index(), MFn::kMeshPolygonComponent, 1001, "matIn", domainInside);
+        //printf("CompID: %d - outside = %d, inside = %d\n", faceIter.index(), domainOutside, domainInside);
+
+				triangle_count = 0;
+				/*status =*/ faceIter.numTriangles(triangle_count);
+				if (triangle_count == 0) {
+					printf("* Warning: Polygon %i contains no triangles.\n", faceIter.index());
+					continue;
+				}
+
 				//bool has_uvs = faceIter.hasUVs();
 
-				//for (int v = 0; v < idxCount; v++)
+        /*
+				int idxCount = faceIter.polygonVertexCount();
+				// Mapping of mesh-relative vertex indices to polygon-relative indices
+				lookup_map.clear();
+				for (int i = 0; i < idxCount; i++) {
+					lookup_map[faceIter.vertexIndex(i)] = i;
+				}*/
+
+        //MVector faceNormal;
+        //faceIter.getNormal(faceNormal, MSpace::kWorld);
+
+				// for every triangle in this polygon...
+				for (int t = 0; t < triangle_count; t++)
 				{
-          fprintf(outfile, ";\n  %d, %d, %d",
-            faceIter.vertexIndex(0)+1,
-            faceIter.vertexIndex(1)+1,
-            faceIter.vertexIndex(2)+1);
-          //fprintf(outfile, " %d", faceIter.vertexIndex(v)+1);
-				}
+					MPointArray triangle_points;
+					MIntArray triangle_vertex_list;
+					faceIter.getTriangle(t, triangle_points, triangle_vertex_list, MSpace::kObject);
+
+					if (triangle_vertex_list.length() != 3) {
+						printf("* Error: Triangle %i in polygon %i has %d indices!\n",
+							t, faceIter.index(), triangle_vertex_list.length());
+					}
+
+          fprintf(outfile, "  %d %d %d %d 3 %d %d %d\n",
+            surface_nr, boundary_condition_nr,
+            domainInside, domainOutside,
+            triangle_vertex_list[0] + 1,
+            triangle_vertex_list[1] + 1,
+            triangle_vertex_list[2] + 1);
+
+					//for (int v = 0; v < 3; v++)
+					//{
+					//	int localIdx = lookup_map[ triangle_vertex_list[v] ];
+          //}
+        }
 			}
+      break;
 		}
-
-    fprintf(outfile, ");\n\n");
-
-    fprintf(outfile, "tlo poly;\n");
 
     bool doubleSided = false;
 		fnDagNode.findPlug( "doubleSided" ).getValue(doubleSided);
@@ -591,10 +663,11 @@ void stlPlugin::exportGeo(const char *fullpath, bool exportSelectedOnly)
 		//bool opposite = false;
 		//fnDagNode.findPlug( "opposite" ).getValue(opposite);
 
-    //break;
+    break;
 	}
 
 	printf("\nTotal nr. of polygons in file: %d\n", totalNumPolys);
+	printf("\nTotal nr. of triangles in file: %d\n", totalNumTriangles);
 
 	fclose(outfile);
 }

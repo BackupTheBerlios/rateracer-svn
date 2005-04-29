@@ -47,7 +47,7 @@ private:
 	bool isNodeInSelection( const MDagPath& path, const MSelectionList& selList );
 		
 	void exportMeshes(		const char *fullpath, bool exportAll);
-	void exportGeo(		const char *fullpath, bool exportAll);
+	void exportVol(		const char *fullpath, bool exportAll);
 
 	void exportSceneData(	const char *fullpath, bool exportAll);
 
