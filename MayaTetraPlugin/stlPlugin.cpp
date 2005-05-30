@@ -602,7 +602,7 @@ void stlPlugin::exportVol(const char *fullpath, bool exportSelectedOnly)
 				}
 
         // Domain is per polygon, not per triangle...
-        int surface_nr = 1, boundary_condition_nr = 1;
+        int surface_nr = 1, boundary_condition_nr = 0;
         int domainOutside = 0, domainInside = 0;
         fnMesh.getIntBlindData(faceIter.index(), MFn::kMeshPolygonComponent, 1001, "matOut", domainOutside);
         fnMesh.getIntBlindData(faceIter.index(), MFn::kMeshPolygonComponent, 1001, "matIn", domainInside);
